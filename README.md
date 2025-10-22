@@ -10,7 +10,8 @@
 
 ## 🥇 Introduction
 
-[本项目是论文中Iterative Deep-Research Agent的非官方实现版本]
+**本项目是论文中Iterative Deep-Research Agent的非官方实现版本**
+
  
 - **WebResearcher** is an autonomous agent built upon a novel **Iterative Deep-Research Paradigm**. It is designed to emulate the sophisticated cognitive workflow of human experts, moving beyond simple information retrieval to autonomously deconstruct complex problems, orchestrate advanced tool use, and synthesize findings into coherent, evidence-grounded narratives.
 
@@ -68,9 +69,65 @@ To overcome the data bottleneck for training advanced agents, we built a scalabl
   <em>Figure: Illustration of our `last-k-fusion` technique for Test-Time Scaling.</em>
 </p>
 
+
+## Quick Start
+
+### 环境配置
+
+1. 克隆仓库：
+
+```bash
+git clone https://github.com/shibing624/WebResearcher.git
+cd WebResearcher
+```
+
+2. 安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+3. 配置环境变量：
+
+```bash
+cp .env.example .env
+# 编辑 .env 文件，填入您的 API keys 和配置
+```
+
+### 必要的环境变量
+
+在 `.env` 文件中配置以下必要参数：
+
+```bash
+OPENAI_API_KEY="your_api_key"
+OPENAI_BASE_URL="your_base_url"
+
+# Web Search (可选)
+SERPER_API_KEY="your_api_key"
+JINA_API_KEY="your_api_key"
+SANDBOX_FUSION_ENDPOINTS="your_http_url"
+```
+
+## 使用方法
+
+### 运行评测集
+
+```bash
+python main.py
+```
+
 ## 🎥 Demos
 
 ⌛️ Demos showcasing WebResearcher's capabilities on complex research tasks will be released soon!
+
+## Contact
+
+- Issue(建议)
+  ：[![GitHub issues](https://img.shields.io/github/issues/shibing624/agentica.svg)](https://github.com/shibing624/agentica/issues)
+- 邮件我：xuming: xuming624@qq.com
+- 微信我： 加我*微信号：xuming624, 备注：姓名-公司-NLP* 进NLP交流群。
+
+<img src="https://github.com/shibing624/WebResearcher/blob/main/docs/wechat.jpeg" width="200" />
 
 ## 📑 Citation
 
@@ -87,3 +144,16 @@ If you find our work helpful, please kindly cite our paper:
       url={https://arxiv.org/abs/2509.13309}, 
 }
 ```
+## License
+
+The license is [The Apache License 2.0](/LICENSE), free for commercial use. Please include a link to `agentica` and the license in the product description.
+## Contribute
+
+The project code is still rough, if you have any improvements to the code, you are welcome to submit them back to this project. 
+You can submit a PR.
+
+## Acknowledgements 
+
+- [https://github.com/Alibaba-NLP/DeepResearch](https://github.com/Alibaba-NLP/DeepResearch)
+
+Thanks for their great work!
