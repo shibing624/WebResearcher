@@ -67,10 +67,6 @@ class Visit(BaseTool):
         except:
             return "[Visit] Invalid request format: Input must be a JSON object containing 'url' and 'goal' fields"
 
-        # Create log folder if it doesn't exist
-        log_folder = "log"
-        os.makedirs(log_folder, exist_ok=True)
-
         if isinstance(url, str):
             response = self.readpage_jina(url, goal)
         else:
