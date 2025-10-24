@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 @author:XuMing(xuming624@qq.com)
-@description: 
+@description: Main entry point for WebResearcher agent
+
+Supports two modes:
+1. Single Agent (default): Fast, cost-effective, suitable for most scenarios
+2. TTS (Test-Time Scaling): 3-5x cost, higher accuracy, for critical scenarios
 """
 import argparse
 import asyncio
@@ -10,11 +14,10 @@ from loguru import logger
 from dotenv import load_dotenv
 
 load_dotenv('.env', override=True)
-from webresearcher.react_agent import MultiTurnReactAgent
 
 
 async def main(args):
-    # 1. 定义你的 LLM 配置
+    # 1. 定义 LLM 配置
     llm_config = {
         "model": args.model,
         "generate_cfg": {
@@ -26,12 +29,29 @@ async def main(args):
         }
     }
 
-    # 2. 实例化 WebResearcherAgent
-    agent = MultiTurnReactAgent(
-        llm_config=llm_config,
-        function_list=args.function_list,
-        # function_list=["search", "visit", "google_scholar", "PythonInterpreter"]
-    )
+    # 2. 选择代理模式
+    if args.use_tts:
+        logger.warning("=" * 80)
+        logger.warning("⚠️  Test-Time Scaling (TTS) Mode Enabled")
+        logger.warning(f"   Cost: ~{args.num_parallel_agents + 0.5:.1f}x of single-agent baseline")
+        logger.warning(f"   Running {args.num_parallel_agents} parallel agents")
+        logger.warning("   Use this ONLY for high-value scenarios!")
+        logger.warning("=" * 80)
+        
+        from webresearcher.tts_agent import TestTimeScalingAgent
+        agent = TestTimeScalingAgent(
+            llm_config=llm_config,
+            function_list=args.function_list,
+        )
+        use_tts_mode = True
+    else:
+        logger.info("✅ Using single-agent mode (cost-effective)")
+        from webresearcher.react_agent import MultiTurnReactAgent
+        agent = MultiTurnReactAgent(
+            llm_config=llm_config,
+            function_list=args.function_list,
+        )
+        use_tts_mode = False
 
     # 3. 准备输入数据 (与原始的 `run` 格式一致)
     input_data = [
@@ -67,39 +87,107 @@ async def main(args):
             "answer": "1981"},
     ]
 
-    # 4. 运行完整的并行研究与总结
+    # 4. 运行研究任务
     test_case = input_data[:args.test_case_limit] if args.test_case_limit > 0 else input_data
-    for i in test_case:
-        question = i['question']
-        logger.info(f"Processing question: {question}")
+    
+    for idx, item in enumerate(test_case, 1):
+        question = item['question']
+        ground_truth = item['answer']
+        
+        logger.info(f"\n{'='*80}")
+        logger.info(f"📝 Question {idx}/{len(test_case)}: {question[:100]}...")
+        logger.info(f"{'='*80}")
 
-        final_result = await agent.run(question)
+        # Run agent (TTS or single)
+        if use_tts_mode:
+            final_result = await agent.run(
+                question=question,
+                ground_truth=ground_truth,
+                num_parallel_agents=args.num_parallel_agents
+            )
+        else:
+            final_result = await agent.run(question)
 
         # 5. 打印结果
-        logger.info(f"final_result: {final_result}")
-        print("\n\n--- 最终研究结果 ---")
+        print("\n" + "="*80)
+        print("📊 RESULTS")
+        print("="*80)
         print(f"Q: {final_result['question']}")
-        print(f"A (Ground Truth): {i['answer']}")
-        print(f"A (prediction): {final_result['prediction']}")
-        print("\n--- 报告 ---")
-        print(f"{final_result['report']}")
-        print("\n--- 日志 ---")
-        print(json.dumps(final_result['trajectory'], indent=2, ensure_ascii=False))
+        print(f"Ground Truth: {ground_truth}")
+        
+        if use_tts_mode:
+            print(f"Final Answer (TTS): {final_result['final_synthesized_answer']}")
+            print(f"\n--- Parallel Runs: {len(final_result['parallel_runs'])} ---")
+            for i, run in enumerate(final_result['parallel_runs'], 1):
+                print(f"  Agent {i}: {run.get('prediction', 'N/A')[:100]}...")
+        else:
+            print(f"Prediction: {final_result['prediction']}")
+            print(f"\n--- Report ---")
+            print(final_result['report'])
+        
+        if args.verbose:
+            print(f"\n--- Full Trajectory ---")
+            if use_tts_mode:
+                print(json.dumps(final_result['parallel_runs'], indent=2, ensure_ascii=False))
+            else:
+                print(json.dumps(final_result['trajectory'], indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="o3-mini")
-    parser.add_argument("--temperature", type=float, default=0.6)
-    parser.add_argument("--top_p", type=float, default=0.95)
-    parser.add_argument("--presence_penalty", type=float, default=1.1)
-    parser.add_argument("--max_input_tokens", type=int, default=32000)
-    parser.add_argument("--model_thinking_type", type=str, default='enabled')
-    # function_list=["search", "visit", "google_scholar", "PythonInterpreter"]
+    parser = argparse.ArgumentParser(
+        description="WebResearcher: Iterative Deep-Research Agent",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Single agent (default, cost-effective)
+  python main.py --test_case_limit 1
+  
+  # Test-Time Scaling (3-5x cost, higher accuracy)
+  python main.py --use_tts --num_parallel_agents 3 --test_case_limit 1
+  
+  # Custom model and tools
+  python main.py --model gpt-4o --function_list search PythonInterpreter
+        """
+    )
+    
+    # Model configuration
+    parser.add_argument("--model", type=str, default="o3-mini",
+                        help="LLM model name")
+    parser.add_argument("--temperature", type=float, default=0.6,
+                        help="Sampling temperature")
+    parser.add_argument("--top_p", type=float, default=0.95,
+                        help="Nucleus sampling threshold")
+    parser.add_argument("--presence_penalty", type=float, default=1.1,
+                        help="Presence penalty")
+    parser.add_argument("--max_input_tokens", type=int, default=32000,
+                        help="Maximum input tokens")
+    parser.add_argument("--model_thinking_type", type=str, default='enabled',
+                        choices=['enabled', 'disabled', 'auto'],
+                        help="Model thinking mode")
+    
+    # Agent configuration
     parser.add_argument("--function_list", type=str, nargs='*',
-                        default=["search", "google_scholar", "PythonInterpreter"])
-    parser.add_argument("--test_case_limit", type=int, default=3)
+                        default=["search", "google_scholar", "PythonInterpreter"],
+                        help="List of tools to enable")
+    
+    # Test-Time Scaling (TTS)
+    parser.add_argument("--use_tts", action="store_true",
+                        help="Enable Test-Time Scaling (3-5x cost, higher accuracy)")
+    parser.add_argument("--num_parallel_agents", type=int, default=3,
+                        help="Number of parallel agents for TTS mode")
+    
+    # Execution
+    parser.add_argument("--test_case_limit", type=int, default=3,
+                        help="Number of test cases to run (0 for all)")
+    parser.add_argument("--verbose", action="store_true",
+                        help="Print full trajectory logs")
+    
     args = parser.parse_args()
-    print(args)
-
+    
+    # Print configuration
+    logger.info("🚀 Starting WebResearcher")
+    logger.info(f"   Model: {args.model}")
+    logger.info(f"   Mode: {'TTS (Test-Time Scaling)' if args.use_tts else 'Single Agent'}")
+    logger.info(f"   Tools: {', '.join(args.function_list)}")
+    
     asyncio.run(main(args))

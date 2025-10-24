@@ -50,59 +50,60 @@ def today_date():
 class ResearchRound:
     """
     实现了 IterResearch 范式的核心状态管理器。
-    这取代了“单上下文”的 `messages` 列表。
+    这取代了"单上下文"的 `messages` 列表。
     """
 
     def __init__(self, question: str):
         self.question = question  # 原始问题（固定）
         self.prev_report = "无"  # 上轮总结报告（核心记忆），初始为空
-        self.cur_tool_res = None  # 本轮工具结果 (用于 update_report)
-        self.cur_think = ""  # 本轮思考过程 (用于 update_report)
+        self.last_tool_res = None  # 上一轮工具结果（用于输入到本轮 get_context）
+        self.pending_tool_res = None  # 本轮待综合的工具结果（用于 synthesize_report）
+        self.pending_think = ""  # 本轮待综合的思考过程（用于 synthesize_report）
 
     def get_context(self, system_prompt: str) -> List[Dict]:
         """
-        [已修复] 生成本轮精简上下文（仅含必要信息，避免臃肿）。
-        这是 IterResearch 的核心：状态只包含 (问题, 上轮报告, 最新工具结果)。
+        生成本轮精简上下文（仅含必要信息，避免臃肿）。
+        这是 IterResearch 的核心：状态只包含 (问题, 上轮报告, 上一轮工具结果)。
         """
         context = [
             {"role": "system", "content": system_prompt},
-            {"role": "assistant", "content": f"【上轮研究总结】\n{self.prev_report}"},
             {"role": "user", "content": f"【研究问题】\n{self.question}"},
+            {"role": "user", "content": f"【上轮研究总结】\n{self.prev_report}"},
         ]
-        # 仅添加本轮工具结果（若有），不携带历史冗余
-        if self.cur_tool_res:
-            context.append({"role": "user", "content": f"【本轮工具结果】\n{self.cur_tool_res}"})
+        # 添加上一轮工具结果（若有），作为 Workspace 的一部分
+        if self.last_tool_res:
+            context.append({"role": "user", "content": f"【上轮工具结果】\n{self.last_tool_res}"})
 
         return context
 
-    def set_staging_data(self, think: str, tool_res: str):
-        """[新] 暂存本轮的思考和工具结果，以便 update_report 使用"""
-        self.cur_think = think
-        self.cur_tool_res = tool_res
+    def set_pending_data(self, think: str, tool_res: str):
+        """暂存本轮的思考和工具结果，以便 synthesize_report 使用"""
+        self.pending_think = think
+        self.pending_tool_res = tool_res
 
-    async def update_report(self, llm_agent: 'MultiTurnReactAgent'):
+    async def synthesize_report(self, llm_agent: 'MultiTurnReactAgent'):
         """
-        [已修复] 每轮结束后更新报告（核心：合并新信息，过滤噪音）。
-        这是一个 LLM 调用，用于“综合” (synthesize)。
+        每轮工具调用后更新报告（核心：合并新信息，过滤噪音）。
+        这是一个 LLM 调用，用于"综合" (synthesize)。
         """
-        if not self.cur_tool_res:
-            logger.warning("update_report called with no tool result. Skipping.")
+        if not self.pending_tool_res:
+            logger.warning("synthesize_report called with no pending tool result. Skipping.")
             return
 
         # logger.info("Synthesizing new report...")
         report_prompt = [
             {"role": "system", "content": (
                 "你是一个研究报告综合器。\n"
-                "你的任务是基于“上轮报告”、“本轮思考”和“本轮工具结果”，生成一份更新、更精炼的“新研究报告”。\n"
+                "你的任务是基于【上轮报告】、【本轮思考】和【本轮工具结果】，生成一份更新、更精炼的【新研究报告】。\n"
                 "规则:\n"
-                "1. 整合新信息：将“本轮工具结果”中的关键发现融入报告。\n"
-                "2. 修正与去重：根据“本轮思考”，修正“上轮报告”中的错误，并删除重复或不再相关的信息。\n"
+                "1. 整合新信息：将【本轮工具结果】中的关键发现融入报告。\n"
+                "2. 修正与去重：根据【本轮思考】，修正【上轮报告】中的错误，并删除重复或不再相关的信息。\n"
                 "3. 保持连贯：确保新报告是一个逻辑清晰、事实准确的完整总结。\n"
                 "4. 只输出报告内容，不要说其他的话。"
             )},
             {"role": "user", "content": f"【上轮报告】\n{self.prev_report}"},
-            {"role": "user", "content": f"【本轮思考】\n{self.cur_think}"},
-            {"role": "user", "content": f"【本轮工具结果】\n{self.cur_tool_res}"}
+            {"role": "user", "content": f"【本轮思考】\n{self.pending_think}"},
+            {"role": "user", "content": f"【本轮工具结果】\n{self.pending_tool_res}"}
         ]
 
         # 使用 llm_agent 的 call_server 方法进行异步调用
@@ -110,9 +111,12 @@ class ResearchRound:
 
         self.prev_report = new_report.strip() if new_report else self.prev_report
 
-        # 清理本轮数据，为下一轮做准备
-        self.cur_tool_res = None
-        self.cur_think = ""
+        # [关键] 将本轮的工具结果转移为下一轮的输入
+        self.last_tool_res = self.pending_tool_res
+        
+        # 清理待综合数据
+        self.pending_tool_res = None
+        self.pending_think = ""
         # logger.info(f"Report updated.")
 
 
@@ -152,8 +156,8 @@ class MultiTurnReactAgent(FnCallAgent):
         }
 
     async def call_server(self, msgs: List[Dict], stop_sequences: List[str] = None,
-                          max_tries: int = 1) -> str:
-        """[已修复] 改为 async 异步方法，并使用 run_in_executor 处理同步的 OpenAI 库"""
+                          max_tries: int = 3) -> str:
+        """改为 async 异步方法，并使用 run_in_executor 处理同步的 OpenAI 库"""
         client = OpenAI(
             api_key=OPENAI_API_KEY,
             base_url=OPENAI_BASE_URL,
@@ -198,21 +202,21 @@ class MultiTurnReactAgent(FnCallAgent):
                 if content and content.strip():
                     return content.strip()
                 else:
-                    logger.info(f"Warning: Attempt {attempt + 1} received an empty response.")
+                    logger.warning(f"Attempt {attempt + 1}: Empty response received.")
 
             except (APIError, APIConnectionError, APITimeoutError) as e:
-                logger.info(f"Error: Attempt {attempt + 1} failed with an API or network error: {e}")
+                logger.warning(f"Attempt {attempt + 1} API error: {e}")
             except Exception as e:
-                logger.info(f"Error: Attempt {attempt + 1} failed with an unexpected error: {e}")
+                logger.error(f"Attempt {attempt + 1} unexpected error: {e}")
 
             if attempt < max_tries - 1:
                 sleep_time = base_sleep_time * (2 ** attempt) + random.uniform(0, 1)
                 sleep_time = min(sleep_time, 30)
-                logger.info(f"Retrying in {sleep_time:.2f} seconds...")
+                logger.info(f"Retrying in {sleep_time:.2f}s...")
                 await asyncio.sleep(sleep_time)  # [关键] 使用 await asyncio.sleep
             else:
-                logger.info("Error: All retry attempts have been exhausted. The call has failed.")
-        return f"llm server error!!!"
+                logger.error("All retry attempts exhausted. The call has failed.")
+        return "LLM server error (all retries exhausted)."
 
     def count_tokens(self, messages, model="gpt-4o"):
         try:
@@ -325,16 +329,14 @@ class MultiTurnReactAgent(FnCallAgent):
 
                 # 7. [关键] 更新 IterResearch 状态
                 # 7a. 暂存思考和工具结果
-                research_round.set_staging_data(think=parsed["think"], tool_res=result)
+                research_round.set_pending_data(think=parsed["think"] or "", tool_res=result)
 
-                # 7b. [核心] 调用 LLM 进行“综合”，更新中央记忆 (prev_report)
-                await research_round.update_report(self)
-                # 注意：update_report 内部会自动清理 cur_tool_res，以便 get_context 在下一轮开始时是干净的
-                # 但如果下一轮的 get_context 需要 *立即* 看到本轮结果，则需调整
-                # 根据论文图2，下一轮的 Workspace 包含 Report 和 Tool Response
-                # 我们的实现是：get_context(包含上轮Report) -> LLM -> Tool -> update_report(融合Tool结果)
-                # 为了让 *下一轮* 的 `get_context` 包含 *本轮* 工具结果，我们调整一下：
-                research_round.cur_tool_res = result  # 重新赋值，以便下一轮 get_context 能获取到
+                # 7b. [核心] 调用 LLM 进行"综合"，更新中央记忆 (prev_report)
+                # synthesize_report 内部会：
+                # - 将 pending_tool_res 融合到 prev_report
+                # - 将 pending_tool_res 转移为 last_tool_res（供下一轮输入使用）
+                # - 清空 pending_tool_res 和 pending_think
+                await research_round.synthesize_report(self)
 
             else:
                 logger.warning("LLM did not produce <answer> or <tool_call>. Ending.")
