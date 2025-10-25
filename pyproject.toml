@@ -30,14 +30,12 @@ classifiers = [
 ]
 
 dependencies = [
-    "mcp",
     "requests",
     "loguru",
     "tiktoken",
     "openai>=1.0.0",
     "pydantic>=2.0.0",
     "json5",
-    "Pillow",
     "pandas",
     "tabulate",
 ]
