@@ -131,30 +131,50 @@ class MultiTurnReactAgent:
         self.llm_generate_cfg = llm_config["generate_cfg"]
         self.model = llm_config.get("model", "gpt-4o")  # 主模型
         self.max_input_tokens = llm_config.get("max_input_tokens", 32000)
-        self.llm_timeout = llm_config.get("llm_timeout", 120.0)
-        self.agent_timeout = llm_config.get("agent_timeout", 300.0)
+        self.llm_timeout = llm_config.get("llm_timeout", 300.0)
+        self.agent_timeout = llm_config.get("agent_timeout", 600.0)
         self.model_thinking_type = llm_config.get("model_thinking_type", "enabled")
         self.function_list = function_list or list(TOOL_MAP.keys())
 
     def parse_output(self, text: str) -> Dict[str, str]:
-        """[新] 辅助函数：用于从 LLM 输出中解析标签"""
-        think = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
-        tool_call = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL)
-        answer = re.search(r'<answer>(.*?)</answer>', text, re.DOTALL)
-
-        # 优先处理 Python 代码块的特殊格式
-        if tool_call and "python\n<code>" in tool_call.group(1):
-            py_call = tool_call.group(1).strip()  # e.g., "python\n<code>...</code>"
-            tool_call_str = py_call
-        elif tool_call:
-            tool_call_str = tool_call.group(1).strip()
+        """
+        从 LLM 输出中解析标签。
+        优先级：answer > tool_call > think
+        使用非贪婪匹配，确保正确提取可能嵌套的标签。
+        """
+        # 1. 提取 answer（最终答案）- 使用 findall 捕获所有 answer 标签
+        answer_matches = re.findall(r'<answer>(.*?)</answer>', text, re.DOTALL)
+        if answer_matches:
+            # 如果有多个 answer，拼接它们
+            answer_str = "\n".join([match.strip() for match in answer_matches if match.strip()])
+        else:
+            answer_str = None
+        
+        # 2. 提取 tool_call（工具调用）
+        tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL)
+        
+        if tool_call_match:
+            tool_call_content = tool_call_match.group(1).strip()
+            # 处理 Python 代码块的特殊格式
+            if "python\n<code>" in tool_call_content or "<code>" in tool_call_content:
+                tool_call_str = tool_call_content
+            else:
+                tool_call_str = tool_call_content
         else:
             tool_call_str = None
-
+        
+        # 3. 提取 think（思考过程）
+        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
+        think_str = think_match.group(1).strip() if think_match else None
+        
+        # 调试日志：帮助诊断解析问题
+        if not answer_str and not tool_call_str:
+            logger.debug(f"⚠️ Parse warning: No answer or tool_call found. Text preview:\n{text[:300]}...")
+        
         return {
-            "think": think.group(1).strip() if think else None,
+            "think": think_str,
             "tool_call": tool_call_str,
-            "answer": answer.group(1).strip() if answer else None,
+            "answer": answer_str,
         }
 
     async def call_server(self, msgs: List[Dict], stop_sequences: List[str] = None,
@@ -169,7 +189,7 @@ class MultiTurnReactAgent:
         base_sleep_time = 1
         loop = asyncio.get_event_loop()
 
-        stop_sequences = stop_sequences or ["\n<tool_response>", "<tool_response>", "</tool_response>"]
+        stop_sequences = stop_sequences or ["<tool_response>"]
 
         for attempt in range(max_tries):
             try:
@@ -195,11 +215,13 @@ class MultiTurnReactAgent:
                 )
 
                 content = chat_response.choices[0].message.content
+                reasoning_content = None
                 if hasattr(chat_response.choices[0].message, 'reasoning_content') and chat_response.choices[
                     0].message.reasoning_content:
                     reasoning_content = chat_response.choices[0].message.reasoning_content
                     content = f"<think>{reasoning_content}</think>\n{content}"
-                # logger.debug(f"input messages: {msgs}, \nLLM Response: {content}")
+                
+                logger.debug(f"input messages: {msgs}, \nLLM Response: {content}, \nreasoning_content: {reasoning_content}")
 
                 if content and content.strip():
                     return content.strip()
@@ -310,11 +332,9 @@ class MultiTurnReactAgent:
             if round_num == 1:
                 full_trajectory_log.extend(current_context)  # 仅记录初始上下文
 
-            # logger.info(f"--- Round {round_num} (LLM Calls left: {num_llm_calls_available}) ---")
-
             # 3. 调用LLM获取“思考+工具调用/答案”（论文中的Think-Action组件）
             content = await self.call_server(current_context)
-            full_trajectory_log.append({"role": "assistant", "content": content.strip()})
+            full_trajectory_log.append({"role": "assistant", "content": content})
 
             logger.debug(f'Round {round_num}: {content}')
 
@@ -349,10 +369,39 @@ class MultiTurnReactAgent:
                 await research_round.synthesize_report(self)
 
             else:
-                logger.warning("LLM did not produce <answer> or <tool_call>. Ending.")
-                prediction = "No answer found (format error)."
-                termination = "format error"
-                break
+                # 格式错误：LLM 没有生成 answer 或 tool_call
+                logger.warning("⚠️ LLM did not produce <answer> or <tool_call>. Forcing answer generation...")
+                
+                # 强制生成答案：基于当前研究报告要求 LLM 给出最终答案
+                force_answer_msgs = current_context + [
+                    {"role": "user", "content": (
+                        "You did not provide a valid response format. "
+                        "Based on the research summary and information gathered so far, "
+                        "please provide the final answer to the original question. "
+                        "Use <answer>...</answer> format."
+                    )}
+                ]
+                
+                try:
+                    forced_content = await self.call_server(force_answer_msgs)
+                    forced_parsed = self.parse_output(forced_content)
+                    
+                    if forced_parsed["answer"]:
+                        logger.info("✅ Successfully forced answer generation")
+                        prediction = forced_parsed["answer"]
+                        termination = "answer (forced)"
+                        full_trajectory_log.append({"role": "assistant", "content": forced_content})
+                        break
+                    else:
+                        logger.error("❌ Failed to force answer generation")
+                        prediction = "No answer found (format error after retry)."
+                        termination = "format error"
+                        break
+                except Exception as e:
+                    logger.error(f"❌ Error during forced answer generation: {e}")
+                    prediction = "No answer found (format error)."
+                    termination = "format error"
+                    break
 
             # 8. Token 限制检查 (现在检查精简上下文，更不容易触发)
             token_count = self.count_tokens(current_context)
@@ -367,6 +416,7 @@ class MultiTurnReactAgent:
                 ]
                 content = await self.call_server(force_answer_msgs)
                 parsed = self.parse_output(content)
+                logger.debug(f"Parsed output: {parsed}")
                 prediction = parsed["answer"] if parsed["answer"] else "No answer found (token limit)."
                 termination = 'token limit reached'
                 break  # 退出循环
