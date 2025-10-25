@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "webresearcher"
+dynamic = ["version"]
+description = "An Iterative Deep-Research Agent with unbounded reasoning capability"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "XuMing", email = "xuming624@qq.com"}
+]
+keywords = ["research", "agent", "ai", "llm", "iterative-research", "deep-research", "web-research"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "mcp",
+    "requests",
+    "loguru",
+    "tiktoken",
+    "openai>=1.0.0",
+    "pydantic>=2.0.0",
+    "json5",
+    "Pillow",
+    "pandas",
+    "tabulate",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio",
+    "black",
+    "flake8",
+    "mypy",
+]
+video = [
+    "opencv-python",
+    "moviepy",
+]
+sandbox = [
+    "sandbox-fusion",
+]
+
+[project.urls]
+Homepage = "https://github.com/shibing624/WebResearcher"
+Documentation = "https://github.com/shibing624/WebResearcher#readme"
+Repository = "https://github.com/shibing624/WebResearcher"
+"Bug Reports" = "https://github.com/shibing624/WebResearcher/issues"
+
+[project.scripts]
+webresearcher = "webresearcher.cli:main"
+
+[tool.setuptools]
+packages = ["webresearcher", "webresearcher.file_tools"]
+
+[tool.setuptools.dynamic]
+version = {attr = "webresearcher.__version__"}
+
+[tool.black]
+line-length = 120
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+

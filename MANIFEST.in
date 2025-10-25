@@ -1,0 +1,26 @@
+# Include documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements.txt
+
+# Include package data
+recursive-include webresearcher *.py *.txt *.md
+
+# Exclude development and build files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude .git*
+
+# Exclude test files
+prune tests
+prune examples
+prune docs
+
+# Exclude build artifacts
+prune build
+prune dist
+prune *.egg-info
+

@@ -70,50 +70,124 @@ To overcome the data bottleneck for training advanced agents, we built a scalabl
 </p>
 
 
-## Quick Start
+## 🚀 Quick Start
 
-### 环境配置
+### Installation
 
-1. 克隆仓库：
+#### From PyPI (Recommended)
+
+```bash
+pip install webresearcher
+```
+
+#### From Source
 
 ```bash
 git clone https://github.com/shibing624/WebResearcher.git
 cd WebResearcher
+pip install -e .
 ```
 
-2. 安装依赖：
+### Configuration
+
+Create a `.env` file in your project root or set environment variables:
 
 ```bash
-pip install -r requirements.txt
-```
-
-3. 配置环境变量：
-
-```bash
-cp .env.example .env
-# 编辑 .env 文件，填入您的 API keys 和配置
-```
-
-### 必要的环境变量
-
-在 `.env` 文件中配置以下必要参数：
-
-```bash
+# Required: OpenAI API
 OPENAI_API_KEY="your_api_key"
-OPENAI_BASE_URL="your_base_url"
+OPENAI_BASE_URL="your_base_url"  # Optional, for custom endpoints
 
-# Web Search (可选)
-SERPER_API_KEY="your_api_key"
-JINA_API_KEY="your_api_key"
-SANDBOX_FUSION_ENDPOINTS="your_http_url"
+# Required for web search
+SERPER_API_KEY="your_serper_api_key"
+
+# Optional
+JINA_API_KEY="your_jina_api_key"  # For web scraping
+SANDBOX_FUSION_ENDPOINTS="your_endpoint"  # For Python code execution
 ```
 
-## 使用方法
+Get API keys:
+- OpenAI: https://platform.openai.com/
+- Serper (Google Search): https://serper.dev/
+- Jina AI: https://jina.ai/
 
-### 运行评测集
+## 💻 Usage
+
+### Command Line
 
 ```bash
-python main.py
+# Basic usage
+webresearcher "What is the capital of France?"
+
+# With custom model and tools
+webresearcher "刘翔破纪录时候是多少岁?" --model gpt-4o --tools search,google_scholar
+
+# Use Test-Time Scaling for higher accuracy (3-5x cost)
+webresearcher "Complex research question" --use-tts --num-agents 3
+
+# Save detailed results
+webresearcher "Your question" --output results.json
+
+# Verbose logging
+webresearcher "Your question" --verbose
+
+# Show help
+webresearcher --help
+```
+
+### Python API
+
+#### Single Agent (Recommended for daily use)
+
+```python
+import asyncio
+from webresearcher import MultiTurnReactAgent
+
+# Configure LLM
+llm_config = {
+    "model": "gpt-4o",
+    "generate_cfg": {
+        "temperature": 0.6,
+        "top_p": 0.95,
+    }
+}
+
+# Create agent
+agent = MultiTurnReactAgent(
+    llm_config=llm_config,
+    function_list=["search", "google_scholar", "PythonInterpreter"]
+)
+
+# Run research
+async def main():
+    result = await agent.run("刘翔破纪录时候是多少岁?")
+    print(result['prediction'])
+
+asyncio.run(main())
+```
+
+#### Test-Time Scaling (For critical questions)
+
+```python
+from webresearcher import TestTimeScalingAgent
+
+# Create TTS agent
+agent = TestTimeScalingAgent(
+    llm_config=llm_config,
+    function_list=["search", "google_scholar"]
+)
+
+# Run with multiple parallel agents
+result = await agent.run(
+    question="Complex research question",
+    num_parallel_agents=3
+)
+print(result['final_synthesized_answer'])
+```
+
+### As a Module
+
+```bash
+python -m webresearcher "Your research question"
 ```
 
 ## 🎥 Demos
