@@ -4,8 +4,11 @@
   <img src="./docs/webresearcher.jpg" alt="logo" width="30%"/>
 </p>
 
-![version](https://img.shields.io/badge/version-1.0.0-blue)
-[![arXiv](https://img.shields.io/badge/arXiv-2509.13309-b31b1b.svg)](https://arxiv.org/abs/2509.13309) <!-- Placeholder link -->
+[![PyPI version](https://img.shields.io/pypi/v/webresearcher.svg)](https://pypi.org/project/webresearcher/)
+[![Python](https://img.shields.io/pypi/pyversions/webresearcher.svg)](https://pypi.org/project/webresearcher/)
+[![License](https://img.shields.io/github/license/shibing624/WebResearcher.svg)](https://github.com/shibing624/WebResearcher/blob/main/LICENSE)
+[![arXiv](https://img.shields.io/badge/arXiv-2509.13309-b31b1b.svg)](https://arxiv.org/abs/2509.13309)
+[![Downloads](https://static.pepy.tech/badge/webresearcher)](https://pepy.tech/project/webresearcher)
 
 
 ## 🥇 Introduction
@@ -194,14 +197,26 @@ python -m webresearcher "Your research question"
 
 ⌛️ Demos showcasing WebResearcher's capabilities on complex research tasks will be released soon!
 
-## Contact
+## 📚 Documentation
 
-- Issue(建议)
-  ：[![GitHub issues](https://img.shields.io/github/issues/shibing624/agentica.svg)](https://github.com/shibing624/agentica/issues)
-- 邮件我：xuming: xuming624@qq.com
-- 微信我： 加我*微信号：xuming624, 备注：姓名-公司-NLP* 进NLP交流群。
+- [Examples](./examples/) - Usage examples and tutorials
+- [CHANGELOG](./CHANGELOG.md) - Version history
+- [CONTRIBUTING](./CONTRIBUTING.md) - How to contribute
+- [RELEASE](./RELEASE.md) - Release process guide
 
-<img src="https://github.com/shibing624/WebResearcher/blob/main/docs/wechat.jpeg" width="200" />
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## 📧 Contact
+
+- **Issues**: [![GitHub issues](https://img.shields.io/github/issues/shibing624/WebResearcher.svg)](https://github.com/shibing624/WebResearcher/issues)
+- **Email**: xuming624@qq.com
+- **WeChat**: xuming624 (备注：姓名-公司-NLP)
+
+<p align="center">
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/wechat.jpeg" width="200" />
+</p>
 
 ## 📑 Citation
 
