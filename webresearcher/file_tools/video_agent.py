@@ -11,8 +11,7 @@ import os
 import json
 import asyncio
 
-from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.tools import BaseTool
+from webresearcher.base import BaseTool
 from webresearcher.file_tools.video_analysis import VideoAnalysis
 
 
@@ -42,7 +41,6 @@ async def video_analysis(params, **kwargs):
     return results
 
 
-@register_tool("VideoAgent")
 class VideoAgent(BaseTool):
     description = "Video/audio analysis with object detection, text extraction, scene understanding, and metadata analysis."
     parameters = [

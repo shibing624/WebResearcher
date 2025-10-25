@@ -2,7 +2,7 @@ import json
 import os
 from typing import List, Union
 import requests
-from qwen_agent.tools.base import BaseTool, register_tool
+from webresearcher.base import BaseTool
 from openai import OpenAI
 import time
 import tiktoken
@@ -14,7 +14,6 @@ WEBCONTENT_MAXLENGTH = int(os.getenv("WEBCONTENT_MAXLENGTH", 150000))
 JINA_API_KEY = os.environ.get('JINA_API_KEY')
 
 
-@staticmethod
 def truncate_to_tokens(text: str, max_tokens: int = 95000) -> str:
     encoding = tiktoken.get_encoding("cl100k_base")
     
@@ -35,7 +34,6 @@ of the content as far as possible, it can be more than three paragraphs.","summa
 information to the goal."}}}}"""
 
 
-@register_tool('visit', allow_overwrite=True)
 class Visit(BaseTool):
     # The `description` tells the agent the functionality of this tool.
     name = 'visit'

@@ -4,13 +4,12 @@ import http.client
 import json
 from loguru import logger
 
-from qwen_agent.tools.base import BaseTool, register_tool
+from webresearcher.base import BaseTool
 
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY')
 logger.debug(f"SERPER_API_KEY: {SERPER_API_KEY}")
 
 
-@register_tool("search", allow_overwrite=True)
 class Search(BaseTool):
     name = "search"
     description = "Performs batched web searches: supply an array 'query'; the tool retrieves the top 10 results for each query in one call."
@@ -29,7 +28,7 @@ class Search(BaseTool):
     }
 
     def __init__(self, cfg: Optional[dict] = None):
-        super().__init__(cfg)
+        pass  # No parent __init__ needed
 
     def google_search_with_serp(self, query: str):
         def contains_chinese_basic(text: str) -> bool:

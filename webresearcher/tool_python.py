@@ -1,8 +1,7 @@
 import re
 from typing import Dict, List, Optional, Union
 import json5
-from qwen_agent.tools.base import BaseToolWithFileAccess, register_tool
-from qwen_agent.utils.utils import extract_code
+from webresearcher.base import BaseToolWithFileAccess, extract_code
 from sandbox_fusion import run_code, RunCodeRequest, RunStatus
 from requests.exceptions import Timeout
 import os
@@ -21,7 +20,6 @@ def has_chinese_chars(texts: List[str]) -> bool:
     return False
 
 
-@register_tool('PythonInterpreter', allow_overwrite=True)
 class PythonInterpreter(BaseToolWithFileAccess):
     name = "PythonInterpreter"
     description = 'Execute Python code in a sandboxed environment. Use this to run Python code and get the execution results.\n**Make sure to use print() for any output you want to see in the results.**\nFor code parameters, use placeholders first, and then put the code within <code></code> XML tags, such as:\n<tool_call>\n{"purpose": <detailed-purpose-of-this-tool-call>, "name": <tool-name>, "arguments": {"code": ""}}\n<code>\nHere is the code.\n</code>\n</tool_call>\n'
@@ -38,7 +36,7 @@ class PythonInterpreter(BaseToolWithFileAccess):
     }
 
     def __init__(self, cfg: Optional[Dict] = None):
-        super().__init__(cfg)
+        super().__init__()
 
     @property
     def args_format(self) -> str:

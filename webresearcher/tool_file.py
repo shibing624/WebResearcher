@@ -9,9 +9,7 @@ output:
 """
 import json
 
-from qwen_agent.tools.base import BaseTool, register_tool
-from qwen_agent.utils.tokenization_qwen import count_tokens
-from qwen_agent.settings import DEFAULT_MAX_INPUT_TOKENS
+from webresearcher.base import BaseTool, count_tokens, DEFAULT_MAX_INPUT_TOKENS
 
 from webresearcher.file_tools.file_parser import SingleFileParser, compress
 from webresearcher.file_tools.video_agent import VideoAgent
@@ -76,7 +74,6 @@ async def file_parser(params, **kwargs):
         return compress(file_results)
 
 
-@register_tool('parse_file', allow_overwrite=True)
 class FileParser(BaseTool):
     name = "parse_file"
     description = "This is a tool that can be used to parse multiple user uploaded local files such as PDF, DOCX, PPTX, TXT, CSV, XLSX, DOC, ZIP, MP4, MP3."

@@ -12,9 +12,7 @@ from typing import Dict, List, Optional, Union
 from loguru import logger
 from openai import OpenAI, APIError, APIConnectionError, APITimeoutError
 
-from qwen_agent.llm.schema import Message
-from qwen_agent.agents.fncall_agent import FnCallAgent
-from qwen_agent.tools import BaseTool
+from webresearcher.base import Message, BaseTool, build_text_completion_prompt, count_tokens as count_tokens_base
 
 from webresearcher.prompt import get_system_prompt
 from webresearcher.tool_file import FileParser
@@ -22,7 +20,6 @@ from webresearcher.tool_scholar import Scholar
 from webresearcher.tool_python import PythonInterpreter
 from webresearcher.tool_search import Search
 from webresearcher.tool_visit import Visit
-from webresearcher.file_tools.utils import build_text_completion_prompt
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL")
@@ -120,7 +117,12 @@ class ResearchRound:
         # logger.info(f"Report updated.")
 
 
-class MultiTurnReactAgent(FnCallAgent):
+class MultiTurnReactAgent:
+    """
+    Multi-turn ReAct agent implementing the IterResearch paradigm.
+    No longer inherits from FnCallAgent - fully independent implementation.
+    """
+    
     def __init__(
             self,
             llm_config: Optional[Dict] = None,
@@ -219,15 +221,23 @@ class MultiTurnReactAgent(FnCallAgent):
         return "LLM server error (all retries exhausted)."
 
     def count_tokens(self, messages, model="gpt-4o"):
+        """Count tokens in messages"""
         try:
-            tokenizer = tiktoken.encoding_for_model(model)
-        except:
-            logger.warning(f"Failed to load tokenizer for {model}. Using simple split.")
+            # Convert dict messages to Message objects if needed
+            full_message = []
+            for x in messages:
+                if isinstance(x, dict):
+                    full_message.append(Message(**x))
+                elif isinstance(x, Message):
+                    full_message.append(x)
+                else:
+                    full_message.append(x)
+            
+            full_prompt = build_text_completion_prompt(full_message, allow_special=True)
+            return count_tokens_base(full_prompt, model)
+        except Exception as e:
+            logger.warning(f"Failed to count tokens: {e}. Using simple split.")
             return sum(len(str(x).split()) for x in messages)
-
-        full_message = [Message(**x) for x in messages]
-        full_prompt = build_text_completion_prompt(full_message, allow_special=True)
-        return len(tokenizer.encode(full_prompt))
 
     async def custom_call_tool(self, tool_call_str: str) -> str:
         """[已修复] 改为 async，并正确处理同步/异步工具"""

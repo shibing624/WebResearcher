@@ -18,8 +18,8 @@ import json5
 import requests
 from pydantic import BaseModel
 
-from qwen_agent.llm.schema import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
-from qwen_agent.log import logger
+from webresearcher.base import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
+from loguru import logger
 
 
 def append_signal_handler(sig, handler):

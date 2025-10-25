@@ -1,6 +1,10 @@
 mcp
 requests
 loguru
-qwen-agent
 tiktoken
 openai
+pydantic
+json5
+Pillow
+pandas
+tabulate

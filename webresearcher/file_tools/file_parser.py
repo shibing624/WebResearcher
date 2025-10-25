@@ -13,11 +13,16 @@ from pandas.api.types import is_datetime64_any_dtype
 
 import pandas as pd
 from tabulate import tabulate
-from qwen_agent.log import logger
-from qwen_agent.settings import DEFAULT_WORKSPACE, DEFAULT_MAX_INPUT_TOKENS
-from qwen_agent.tools.base import BaseTool
-from qwen_agent.tools.storage import KeyNotExistsError, Storage
-from qwen_agent.utils.tokenization_qwen import count_tokens, tokenizer
+from loguru import logger
+from webresearcher.base import (
+    DEFAULT_WORKSPACE, 
+    DEFAULT_MAX_INPUT_TOKENS,
+    BaseTool,
+    KeyNotExistsError,
+    Storage,
+    count_tokens,
+    tokenizer
+)
 from webresearcher.file_tools.utils import (
     get_file_type,
     hash_sha256,

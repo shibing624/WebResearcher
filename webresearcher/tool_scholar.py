@@ -1,14 +1,13 @@
 import os
 import json
 from typing import Union, List
-from qwen_agent.tools.base import BaseTool, register_tool
+from webresearcher.base import BaseTool
 from concurrent.futures import ThreadPoolExecutor
 import http.client
 
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY')
 
 
-@register_tool("google_scholar", allow_overwrite=True)
 class Scholar(BaseTool):
     name = "google_scholar"
     description = "Leverage Google Scholar to retrieve relevant information from academic publications. Accepts multiple queries."

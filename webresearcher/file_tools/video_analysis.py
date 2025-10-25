@@ -12,8 +12,8 @@ from urllib.parse import urlparse
 import requests
 from PIL import Image
 from openai import OpenAI
-from qwen_agent.log import logger
-from qwen_agent.tools.base import BaseTool, register_tool
+from loguru import logger
+from webresearcher.base import BaseTool
 
 # Configuration constants
 MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB
@@ -46,7 +46,6 @@ def temp_directory():
             logger.warning(f"Temp directory cleanup failed: {str(e)}")
 
 
-@register_tool('video_analysis')
 class VideoAnalysis(BaseTool):
     """Improved tool for analyzing video and audio content"""
     parameters = [
