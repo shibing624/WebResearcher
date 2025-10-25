@@ -147,6 +147,7 @@ class MultiTurnReactAgent:
         if answer_matches:
             # 如果有多个 answer，拼接它们
             answer_str = "\n".join([match.strip() for match in answer_matches if match.strip()])
+            answer_str = answer_str.strip()
         else:
             answer_str = None
         
@@ -387,18 +388,17 @@ class MultiTurnReactAgent:
                     forced_parsed = self.parse_output(forced_content)
                     
                     if forced_parsed["answer"]:
-                        logger.info("✅ Successfully forced answer generation")
                         prediction = forced_parsed["answer"]
                         termination = "answer (forced)"
                         full_trajectory_log.append({"role": "assistant", "content": forced_content})
                         break
                     else:
-                        logger.error("❌ Failed to force answer generation")
+                        logger.error("Failed to force answer generation")
                         prediction = "No answer found (format error after retry)."
                         termination = "format error"
                         break
                 except Exception as e:
-                    logger.error(f"❌ Error during forced answer generation: {e}")
+                    logger.error(f"Error during forced answer generation: {e}")
                     prediction = "No answer found (format error)."
                     termination = "format error"
                     break
