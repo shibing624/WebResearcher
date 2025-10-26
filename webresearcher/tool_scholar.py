@@ -1,9 +1,13 @@
 import os
 import json
-from typing import Union, List
-from webresearcher.base import BaseTool
+from typing import Union, List, Optional, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 import http.client
+from contextlib import contextmanager
+
+from webresearcher.logger import logger
+from webresearcher.base import BaseTool
+
 
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY')
 
@@ -24,68 +28,111 @@ class Scholar(BaseTool):
         "required": ["query"],
     }
 
-    def google_scholar_with_serp(self, query: str):
-        conn = http.client.HTTPSConnection("google.serper.dev")
-        payload = json.dumps({
-            "q": query,
-        })
+    @contextmanager
+    def _get_connection(self):
+        """上下文管理器确保连接正确关闭"""
+        conn = http.client.HTTPSConnection("google.serper.dev", timeout=30)
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+    def _make_request(self, conn: http.client.HTTPSConnection, query: str, max_retries: int = 3) -> Optional[Dict[str, Any]]:
+        """发送请求并处理重试逻辑"""
+        payload = json.dumps({"q": query})
         headers = {
             'X-API-KEY': SERPER_API_KEY,
             'Content-Type': 'application/json'
         }
-        res = None
-        for i in range(5):
+        
+        for attempt in range(max_retries):
             try:
                 conn.request("POST", "/scholar", payload, headers)
-                res = conn.getresponse()
-                break
+                response = conn.getresponse()
+                
+                if response.status == 200:
+                    data = response.read()
+                    return json.loads(data.decode("utf-8"))
+                else:
+                    logger.warning(f"HTTP {response.status} for query '{query}', attempt {attempt + 1}")
+                    
+            except (http.client.HTTPException, ConnectionError, json.JSONDecodeError) as e:
+                logger.warning(f"Request failed for query '{query}', attempt {attempt + 1}: {e}")
+                
             except Exception as e:
-                print(e)
-                if i == 4:
-                    return f"Google Scholar Timeout, return None, Please try again later."
-                continue
+                logger.error(f"Unexpected error for query '{query}', attempt {attempt + 1}: {e}")
+        
+        return None
 
+    def _format_result_item(self, page: Dict[str, Any], idx: int) -> str:
+        """格式化单个搜索结果"""
+        # 提取各个字段
+        title = page.get('title', 'No title')
+        year = page.get('year', '')
+        publication_info = page.get('publicationInfo', '')
+        snippet = page.get('snippet', '')
+        cited_by = page.get('citedBy', '')
+        pdf_url = page.get('pdfUrl', '')
+        
+        # 构建格式化字符串
+        result_parts = [f"{idx}. [{title}]"]
+        
+        # 添加链接信息
+        if pdf_url:
+            result_parts[0] += f"({pdf_url})"
+        else:
+            result_parts[0] += "(no available link)"
+        
+        # 添加其他信息
+        if publication_info:
+            result_parts.append(f"Publication: {publication_info}")
+        if year:
+            result_parts.append(f"Year: {year}")
+        if cited_by:
+            result_parts.append(f"Cited by: {cited_by}")
+        if snippet:
+            # 清理snippet中的无用内容
+            clean_snippet = snippet.replace("Your browser can't play this video.", "").strip()
+            if clean_snippet:
+                result_parts.append(clean_snippet)
+        
+        return "\n".join(result_parts)
+
+    def google_scholar_with_serp(self, query: str) -> str:
+        """使用Serper API搜索Google Scholar"""
+        if not SERPER_API_KEY:
+            return "Error: SERPER_API_KEY environment variable is not set."
+        
+        if not query or not query.strip():
+            return "Error: Query cannot be empty."
+        
+        query = query.strip()
+        logger.debug(f"Searching Google Scholar for: '{query}'")
+        
         try:
-            data = res.read()
-            results = json.loads(data.decode("utf-8"))
-            if "organic" not in results:
-                raise Exception(f"No results found for query: '{query}'. Use a less specific query.")
-
-            web_snippets = list()
-            idx = 0
-            if "organic" in results:
-                for page in results["organic"]:
-                    idx += 1
-                    date_published = ""
-                    if "year" in page:
-                        date_published = "\nDate published: " + str(page["year"])
-
-                    publicationInfo = ""
-                    if "publicationInfo" in page:
-                        publicationInfo = "\npublicationInfo: " + page["publicationInfo"]
-
-                    snippet = ""
-                    if "snippet" in page:
-                        snippet = "\n" + page["snippet"]
-
-                    link_info = "no available link"
-                    if "pdfUrl" in page:
-                        link_info = "pdfUrl: " + page["pdfUrl"]
-
-                    citedBy = ""
-                    if "citedBy" in page:
-                        citedBy = "\ncitedBy: " + str(page["citedBy"])
-
-                    redacted_version = f"{idx}. [{page['title']}]({link_info}){publicationInfo}{date_published}{citedBy}\n{snippet}"
-
-                    redacted_version = redacted_version.replace("Your browser can't play this video.", "")
-                    web_snippets.append(redacted_version)
-
-            content = f"A Google scholar for '{query}' found {len(web_snippets)} results:\n\n## Scholar Results\n" + "\n\n".join(
-                web_snippets)
-            return content
-        except:
-            return f"No results found for '{query}'. Try with a more general query."
+            with self._get_connection() as conn:
+                results = self._make_request(conn, query)
+                
+                if not results:
+                    return f"Google Scholar search failed for query: '{query}'. Please try again later."
+                
+                if "organic" not in results or not results["organic"]:
+                    return f"No results found for query: '{query}'. Try using a more general query."
+                
+                # 格式化结果
+                formatted_results = []
+                for idx, page in enumerate(results["organic"], 1):
+                    formatted_result = self._format_result_item(page, idx)
+                    formatted_results.append(formatted_result)
+                
+                result_count = len(formatted_results)
+                header = f"Google Scholar search for '{query}' found {result_count} results:\n\n## Scholar Results\n"
+                
+                return header + "\n\n".join(formatted_results)
+                
+        except Exception as e:
+            logger.error(f"Unexpected error during Google Scholar search for '{query}': {e}")
+            return f"An error occurred while searching for '{query}'. Please try again."
 
     def call(self, params: Union[str, dict], **kwargs) -> str:
         # assert GOOGLE_SEARCH_KEY is not None, "Please set the IDEALAB_SEARCH_KEY environment variable."

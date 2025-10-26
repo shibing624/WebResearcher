@@ -199,6 +199,41 @@ for question in questions:
 
 See [examples/batch_research.py](./examples/batch_research.py) for advanced batch processing.
 
+### Logging Management
+
+WebResearcher provides unified logging control for the entire package. You can control log levels via environment variables or programmatically:
+
+**Via Environment Variable:**
+
+```bash
+# Set log level before running
+export WEBRESEARCHER_LOG_LEVEL=DEBUG  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+webresearcher "Your question"
+```
+
+**Programmatically:**
+
+```python
+from webresearcher import set_log_level, add_file_logger
+
+# Set console log level
+set_log_level("WARNING")  # Only show warnings and errors
+
+# Add file logging with rotation
+add_file_logger("research.log", level="DEBUG")
+
+# Now run your research
+agent = WebResearcherAgent(llm_config)
+result = await agent.run("Your question")
+```
+
+**File Logging Features:**
+- Automatic rotation when file size exceeds 10MB
+- Keeps logs for 7 days
+- Compresses old logs to .zip format
+
+See [examples/logging_example.py](./examples/logging_example.py) and [docs/logging_guide.md](./docs/logging_guide.md) for detailed usage.
+
 ## 🎯 Features
 
 ### Core Features

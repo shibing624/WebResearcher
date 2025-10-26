@@ -9,12 +9,9 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Optional
-
-from loguru import logger
 from dotenv import load_dotenv
 
-from webresearcher import __version__
+from webresearcher.logger import logger
 from webresearcher.agent import WebResearcherAgent
 from webresearcher.tts_agent import TestTimeScalingAgent
 
@@ -205,12 +202,6 @@ For more information: https://github.com/shibing624/WebResearcher
         help='Enable verbose logging'
     )
     
-    parser.add_argument(
-        '--version',
-        action='version',
-        version=f'%(prog)s {__version__}'
-    )
-    
     return parser
 
 
@@ -222,8 +213,6 @@ def main():
     # Setup logging
     setup_logger(args.verbose)
     
-    # Welcome message
-    logger.info(f"WebResearcher v{__version__}")
     logger.info(f"Model: {args.model} | Mode: {'TTS' if args.use_tts else 'Single'}")
     
     try:

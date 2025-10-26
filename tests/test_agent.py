@@ -85,3 +85,38 @@ def test_agent_parse_output_nested_answer():
     assert parsed["answer"] == "Final answer"
     assert parsed["think"] == "Reasoning"
 
+
+def test_model_supports_thinking():
+    """Test model thinking support detection"""
+    # Test GPT models (should not support thinking)
+    gpt_config = {
+        "model": "gpt-4o",
+        "generate_cfg": {"temperature": 0.6}
+    }
+    gpt_agent = WebResearcherAgent(llm_config=gpt_config)
+    assert not gpt_agent._model_supports_thinking()
+    
+    # Test DeepSeek-R1 models (should support thinking)
+    deepseek_config = {
+        "model": "deepseek-r1",
+        "generate_cfg": {"temperature": 0.6}
+    }
+    deepseek_agent = WebResearcherAgent(llm_config=deepseek_config)
+    assert deepseek_agent._model_supports_thinking()
+    
+    # Test Qwen models (should support thinking)
+    qwen_config = {
+        "model": "qwen2.5-72b-instruct",
+        "generate_cfg": {"temperature": 0.6}
+    }
+    qwen_agent = WebResearcherAgent(llm_config=qwen_config)
+    assert qwen_agent._model_supports_thinking()
+    
+    # Test Claude models (should not support thinking)
+    claude_config = {
+        "model": "claude-3-sonnet",
+        "generate_cfg": {"temperature": 0.6}
+    }
+    claude_agent = WebResearcherAgent(llm_config=claude_config)
+    assert not claude_agent._model_supports_thinking()
+

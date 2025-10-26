@@ -6,19 +6,19 @@
 This module implements the Test-Time Scaling technique from the WebResearcher paper.
 It's an OPTIONAL inference enhancement that trades cost (3-5x tokens) for higher accuracy.
 
-⚠️ COST WARNING:
+COST WARNING:
 - Running N parallel agents costs approximately N × single-agent cost
 - Synthesis step adds ~0.5x additional cost
 - Total cost: ~(N + 0.5)x of single-agent baseline
 
-💡 WHEN TO USE:
-✅ High-value scenarios:
+WHEN TO USE:
+Use for high-value scenarios:
    - Scientific research questions
    - Medical/legal analysis
    - Critical investment decisions
    - Complex technical problem-solving
 
-❌ DON'T use for:
+DON'T use for:
    - Daily queries
    - Simple questions
    - Cost-sensitive applications
@@ -30,8 +30,7 @@ For 95% of use cases, prefer the single WebResearcherAgent (agent.py).
 import asyncio
 from typing import Dict, List, Optional
 
-from loguru import logger
-
+from webresearcher.logger import logger
 from webresearcher.agent import WebResearcherAgent
 
 
@@ -74,7 +73,7 @@ class TestTimeScalingAgent:
         """
         total_cost = num_parallel_agents + 0.5
         return (
-            f"⚠️  TTS Cost Estimation:\n"
+            f"TTS Cost Estimation:\n"
             f"   • Parallel research: {num_parallel_agents} agents × base cost\n"
             f"   • Synthesis: ~0.5× base cost\n"
             f"   • Total: ~{total_cost:.1f}× of single-agent baseline\n"
@@ -99,7 +98,7 @@ class TestTimeScalingAgent:
         Returns:
             List of research results from each agent
         """
-        logger.info(f"🚀 Starting Parallel Research Phase ({num_parallel_agents} agents)")
+        logger.debug(f"Starting Parallel Research Phase ({num_parallel_agents} agents)")
         logger.warning(self.estimate_cost(num_parallel_agents))
 
         tasks = []
@@ -120,8 +119,8 @@ class TestTimeScalingAgent:
             
             # Add to parallel tasks
             tasks.append(agent.run(question))
-            logger.info(
-                f"   • Agent {i+1}: temperature={agent_llm_config['generate_cfg']['temperature']:.2f}"
+            logger.debug(
+                f"Agent {i+1}: temperature={agent_llm_config['generate_cfg']['temperature']:.2f}"
             )
 
         # Execute all agents in parallel
@@ -131,18 +130,18 @@ class TestTimeScalingAgent:
         valid_results = []
         for i, res in enumerate(parallel_results):
             if isinstance(res, Exception):
-                logger.error(f"❌ Agent {i+1} failed with exception: {res}")
+                logger.error(f"Agent {i+1} failed with exception: {res}")
             elif isinstance(res, dict):
                 status = res.get("termination", "unknown")
                 if status == "answer":
-                    logger.info(f"✅ Agent {i+1} succeeded (status: {status})")
+                    logger.debug(f"Agent {i+1} succeeded (status: {status})")
                 else:
-                    logger.warning(f"⚠️  Agent {i+1} finished with status: {status}")
+                    logger.warning(f"Agent {i+1} finished with status: {status}")
                 valid_results.append(res)
             else:
-                logger.error(f"❌ Agent {i+1} returned unexpected type: {type(res)}")
+                logger.error(f"Agent {i+1} returned unexpected type: {type(res)}")
 
-        logger.info(f"✅ Parallel Research Complete: {len(valid_results)}/{num_parallel_agents} agents succeeded")
+        logger.debug(f"Parallel Research Complete: {len(valid_results)}/{num_parallel_agents} agents succeeded")
         return valid_results
 
     async def run_synthesis(
@@ -163,7 +162,7 @@ class TestTimeScalingAgent:
         Returns:
             Dict with final_answer and synthesis_reports
         """
-        logger.info("🔄 Starting Integrative Synthesis Phase")
+        logger.debug("Starting Integrative Synthesis Phase")
 
         if not parallel_results:
             logger.error("No valid results from parallel research. Cannot synthesize.")
@@ -220,13 +219,13 @@ class TestTimeScalingAgent:
         )
 
         # Call LLM for synthesis
-        logger.info("🤖 Calling synthesis LLM...")
+        logger.debug("Calling synthesis LLM...")
         final_answer_raw = await synthesis_agent.call_server(
             synthesis_messages,
             stop_sequences=[]  # No tool stop tokens needed
         )
 
-        logger.info("✅ Synthesis Complete")
+        logger.debug("Synthesis Complete")
         return {
             "final_answer": final_answer_raw.strip(),
             "synthesis_reports": reports_for_log
@@ -254,7 +253,7 @@ class TestTimeScalingAgent:
                 - parallel_runs: All parallel agent results
                 - synthesis_inputs: Reports used for synthesis
         """
-        logger.info(f"🎯 Starting Test-Time Scaling for: {question[:100]}...")
+        logger.debug(f"Starting Test-Time Scaling for: {question[:100]}...")
         
         # Phase 1: Parallel Research
         parallel_results = await self.run_parallel_research(question, num_parallel_agents)

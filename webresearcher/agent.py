@@ -7,11 +7,10 @@ import random
 import time
 
 from typing import Dict, List, Optional, Union
-from loguru import logger
 from openai import OpenAI, APIError, APIConnectionError, APITimeoutError
 
 from webresearcher.base import Message, BaseTool, build_text_completion_prompt, count_tokens as count_tokens_base
-
+from webresearcher.logger import logger
 from webresearcher.prompt import get_system_prompt
 from webresearcher.tool_file import FileParser
 from webresearcher.tool_scholar import Scholar
@@ -138,7 +137,7 @@ class WebResearcherAgent:
         self.max_input_tokens = llm_config.get("max_input_tokens", 32000)
         self.llm_timeout = llm_config.get("llm_timeout", 300.0)
         self.agent_timeout = llm_config.get("agent_timeout", 600.0)
-        self.model_thinking_type = llm_config.get("model_thinking_type", "enabled")
+        self.model_thinking_type = llm_config.get("model_thinking_type", "disabled")
         self.function_list = function_list or list(TOOL_MAP.keys())
 
     def parse_output(self, text: str) -> Dict[str, str]:
@@ -172,11 +171,6 @@ class WebResearcherAgent:
         # 3. 提取 think（思考过程）
         think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
         think_str = think_match.group(1).strip() if think_match else None
-        
-        # 调试日志：帮助诊断解析问题
-        if not answer_str and not tool_call_str:
-            logger.debug(f"⚠️ Parse warning: No answer or tool_call found. Text preview:\n{text[:300]}...")
-        
         return {
             "think": think_str,
             "tool_call": tool_call_str,
@@ -184,7 +178,7 @@ class WebResearcherAgent:
         }
 
     async def call_server(self, msgs: List[Dict], stop_sequences: List[str] = None,
-                          max_tries: int = 3) -> str:
+                          max_tries: int = 1) -> str:
         """改为 async 异步方法，并使用 run_in_executor 处理同步的 OpenAI 库"""
         client = OpenAI(
             api_key=OPENAI_API_KEY,
@@ -199,25 +193,25 @@ class WebResearcherAgent:
 
         for attempt in range(max_tries):
             try:
+                request_params = {
+                    "model": self.model,
+                    "messages": msgs,
+                    "stop": stop_sequences,
+                    "temperature": self.llm_generate_cfg.get('temperature', 0.6),
+                    "top_p": self.llm_generate_cfg.get('top_p', 0.95),
+                    "max_tokens": 10000,
+                    "presence_penalty": self.llm_generate_cfg.get('presence_penalty', 1.1)
+                }
+                if self.model_thinking_type != "disabled":
+                    request_params["extra_body"] = {
+                        "thinking": {
+                            "type": self.model_thinking_type,
+                        }
+                    }
                 # [关键] 使用 run_in_executor 在线程池中运行同步的 blocking I/O
                 chat_response = await loop.run_in_executor(
                     None,  # 使用默认的 ThreadPoolExecutor
-                    lambda: client.chat.completions.create(
-                        model=self.model,
-                        messages=msgs,
-                        stop=stop_sequences,
-                        extra_body={
-                            "thinking": {
-                                # "type": "disabled",  # 不使用深度思考能力
-                                "type": self.model_thinking_type,  # enabled, 使用深度思考能力
-                                # "type": "auto", # 模型自行判断是否使用深度思考能力
-                            }
-                        },
-                        temperature=self.llm_generate_cfg.get('temperature', 0.6),
-                        top_p=self.llm_generate_cfg.get('top_p', 0.95),
-                        max_tokens=10000,
-                        presence_penalty=self.llm_generate_cfg.get('presence_penalty', 1.1)
-                    )
+                    lambda: client.chat.completions.create(**request_params)
                 )
 
                 content = chat_response.choices[0].message.content
@@ -227,7 +221,7 @@ class WebResearcherAgent:
                     reasoning_content = chat_response.choices[0].message.reasoning_content
                     content = f"<think>{reasoning_content}</think>\n{content}"
                 
-                logger.debug(f"input messages: {msgs}, \nLLM Response: {content}, \nreasoning_content: {reasoning_content}")
+                # logger.debug(f"input messages: {msgs}, \nLLM Response: {content}, \nreasoning_content: {reasoning_content}")
 
                 if content and content.strip():
                     return content.strip()
@@ -235,7 +229,7 @@ class WebResearcherAgent:
                     logger.warning(f"Attempt {attempt + 1}: Empty response received.")
 
             except (APIError, APIConnectionError, APITimeoutError) as e:
-                logger.warning(f"Attempt {attempt + 1} API error: {e}")
+                logger.warning(f"Attempt {attempt + 1} API error: {e}, base_url: {OPENAI_BASE_URL}, api_key: {OPENAI_API_KEY}, model: {self.model}")
             except Exception as e:
                 logger.error(f"Attempt {attempt + 1} unexpected error: {e}")
 
@@ -245,8 +239,8 @@ class WebResearcherAgent:
                 logger.info(f"Retrying in {sleep_time:.2f}s...")
                 await asyncio.sleep(sleep_time)  # [关键] 使用 await asyncio.sleep
             else:
-                logger.error("All retry attempts exhausted. The call has failed.")
-        return "LLM server error (all retries exhausted)."
+                logger.error("All retry attempts exhausted. The LLM call failed.")
+        return "LLM server error."
 
     def count_tokens(self, messages, model="gpt-4o"):
         """Count tokens in messages"""
@@ -346,7 +340,7 @@ class WebResearcherAgent:
 
             # 4. 解析输出 (Think, Action/Answer)
             parsed = self.parse_output(content)
-            logger.debug(f"Parsed output: {parsed}")
+            # logger.debug(f"Parsed output: {parsed}")
 
             # 5. 检查是否为最终答案
             if parsed["answer"]:
@@ -421,7 +415,7 @@ class WebResearcherAgent:
                 ]
                 content = await self.call_server(force_answer_msgs)
                 parsed = self.parse_output(content)
-                logger.debug(f"Parsed output: {parsed}")
+                # logger.debug(f"Parsed output: {parsed}")
                 prediction = parsed["answer"] if parsed["answer"] else "No answer found (token limit)."
                 termination = 'token limit reached'
                 break  # 退出循环

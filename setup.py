@@ -14,13 +14,15 @@ def get_version():
         match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", content)
         if match:
             return match.group(1)
-    return '0.1.1'
+    return '0.1.3'
 
 # Read long description from README
 def get_long_description():
     readme_file = os.path.join(os.path.dirname(__file__), 'README.md')
-    with open(readme_file, 'r', encoding='utf-8') as f:
-        return f.read()
+    if os.path.exists(readme_file):
+        with open(readme_file, 'r', encoding='utf-8') as f:
+            return f.read()
+    return ''
 
 # Read requirements
 def get_requirements():

@@ -8,7 +8,7 @@ featuring unbounded reasoning capability through iterative synthesis.
 @author: XuMing(xuming624@qq.com)
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.4"
 __author__ = "XuMing"
 __email__ = "xuming624@qq.com"
 __url__ = "https://github.com/shibing624/WebResearcher"
@@ -32,6 +32,13 @@ from webresearcher.agent import (
 
 from webresearcher.tts_agent import (
     TestTimeScalingAgent,
+)
+
+# Logger
+from webresearcher.logger import (
+    logger,
+    set_log_level,
+    add_file_logger,
 )
 
 # Tools
@@ -62,6 +69,11 @@ __all__ = [
     # Utilities
     "count_tokens",
     "extract_code",
+    
+    # Logger
+    "logger",
+    "set_log_level",
+    "add_file_logger",
     
     # Tools
     "Search",

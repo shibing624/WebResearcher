@@ -199,6 +199,41 @@ for question in questions:
 
 查看 [examples/batch_research.py](./examples/batch_research.py) 获取高级批量处理示例。
 
+### 日志管理
+
+WebResearcher 提供了统一的日志管理系统，可以通过环境变量或编程方式控制日志级别：
+
+**通过环境变量：**
+
+```bash
+# 运行前设置日志级别
+export WEBRESEARCHER_LOG_LEVEL=DEBUG  # 选项：DEBUG, INFO, WARNING, ERROR, CRITICAL
+webresearcher "你的问题"
+```
+
+**编程方式：**
+
+```python
+from webresearcher import set_log_level, add_file_logger
+
+# 设置控制台日志级别
+set_log_level("WARNING")  # 只显示警告和错误
+
+# 添加文件日志，支持自动轮转
+add_file_logger("research.log", level="DEBUG")
+
+# 现在执行研究
+agent = WebResearcherAgent(llm_config)
+result = await agent.run("你的问题")
+```
+
+**文件日志功能：**
+- 文件大小超过 10MB 时自动轮转
+- 保留最近 7 天的日志
+- 自动压缩旧日志为 .zip 格式
+
+详细使用方法请参考 [examples/logging_example.py](./examples/logging_example.py) 和 [docs/logging_guide.md](./docs/logging_guide.md)。
+
 ## 🎯 功能特性
 
 ### 核心特性

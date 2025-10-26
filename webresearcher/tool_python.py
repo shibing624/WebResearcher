@@ -1,13 +1,14 @@
 import re
 from typing import Dict, List, Optional, Union
 import json5
-from webresearcher.base import BaseToolWithFileAccess, extract_code
 from sandbox_fusion import run_code, RunCodeRequest, RunStatus
 from requests.exceptions import Timeout
 import os
 import random
 import time
-from loguru import logger
+from webresearcher.base import BaseToolWithFileAccess, extract_code
+from webresearcher.logger import logger
+
 
 SANDBOX_FUSION_ENDPOINTS = os.environ.get('SANDBOX_FUSION_ENDPOINTS', '').split(',')
 
@@ -92,12 +93,12 @@ class PythonInterpreter(BaseToolWithFileAccess):
                 try:
                     # Randomly sample an endpoint for each attempt
                     endpoint = random.choice(SANDBOX_FUSION_ENDPOINTS)
-                    logger.info(f"Attempt {attempt + 1}/2 using endpoint: {endpoint}")
-                    logger.info(f"Running code:\n{code}, \nendpoint: {endpoint}")
+                    logger.debug(f"Attempt {attempt + 1}/2 using endpoint: {endpoint}")
+                    logger.debug(f"Running code:\n{code}, \nendpoint: {endpoint}")
 
                     code_result = run_code(RunCodeRequest(code=code, language='python', run_timeout=timeout),
                                            max_attempts=1, client_timeout=timeout, endpoint=endpoint)
-                    logger.info(f"[Python] Code Result:{code_result}\nstdout:\n{code_result.run_result.stdout}")
+                    logger.debug(f"[Python] Code Result:{code_result}\nstdout:\n{code_result.run_result.stdout}")
                     result = []
                     if code_result.run_result.stdout:
                         result.append(f"stdout:\n{code_result.run_result.stdout}")
@@ -106,7 +107,7 @@ class PythonInterpreter(BaseToolWithFileAccess):
                     if code_result.run_result.execution_time >= timeout - 1:
                         result.append(f"[PythonInterpreter Error] TimeoutError: Execution timed out.")
                     result = '\n'.join(result)
-                    logger.info('SUCCESS RUNNING TOOL')
+                    logger.debug('SUCCESS RUNNING TOOL')
                     return result if result.strip() else 'Finished execution.'
 
                 except Timeout as e:
@@ -172,7 +173,7 @@ class PythonInterpreter(BaseToolWithFileAccess):
 
 # add demo
 if __name__ == '__main__':
-    logger.info(f"Sandbox Fusion Endpoints: {SANDBOX_FUSION_ENDPOINTS}")
+    logger.debug(f"Sandbox Fusion Endpoints: {SANDBOX_FUSION_ENDPOINTS}")
     interpreter = PythonInterpreter()
     code = """print("Hello, World!")\nfor i in range(5):\n    print(i)"""
     result = interpreter.call({'code': code})

@@ -2,9 +2,9 @@ from typing import Dict, List, Optional, Union
 import os
 import http.client
 import json
-from loguru import logger
-
+from webresearcher.logger import logger
 from webresearcher.base import BaseTool
+
 
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY')
 logger.debug(f"SERPER_API_KEY: {SERPER_API_KEY}")
@@ -121,7 +121,7 @@ class Search(BaseTool):
             for q in query:
                 responses.append(self.search_with_serp(q))
             response = "\n=======\n".join(responses)
-        logger.info(f"[Search] query: {query},\nresponse: {response}")
+        logger.debug(f"[Search] query: {query},\nresponse: {response}")
         return response
 
 

@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
 """
+@author:XuMing(xuming624@qq.com)
+@description: 
 input:
     - query/goal: str
     - Docs: List[file]/List[url]
@@ -8,6 +11,7 @@ output:
     - useful_information: str
 """
 import json
+import os
 
 from webresearcher.base import BaseTool, count_tokens, DEFAULT_MAX_INPUT_TOKENS
 

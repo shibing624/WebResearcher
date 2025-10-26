@@ -7,6 +7,8 @@ from openai import OpenAI
 import time
 import tiktoken
 from webresearcher.prompt import EXTRACTOR_PROMPT
+from webresearcher.logger import logger
+
 
 VISIT_SERVER_TIMEOUT = int(os.getenv("VISIT_SERVER_TIMEOUT", 200))
 WEBCONTENT_MAXLENGTH = int(os.getenv("WEBCONTENT_MAXLENGTH", 150000))
@@ -84,13 +86,13 @@ class Visit(BaseTool):
                 response.append(cur_response)
             response = "\n=======\n".join(response)
         
-        print(f'Summary Length {len(response)}; Summary Content {response}')
+        logger.debug(f'Summary Length {len(response)}; Summary Content {response}')
         return response.strip()
         
     def call_server(self, msgs, max_retries=2):
-        api_key = os.environ.get("API_KEY")
-        url_llm = os.environ.get("API_BASE")
-        model_name = os.environ.get("SUMMARY_MODEL_NAME", "")
+        api_key = os.getenv("OPENAI_API_KEY")
+        url_llm = os.getenv("OPENAI_BASE_URL")
+        model_name = os.getenv("SUMMARY_MODEL_NAME", "gpt-4o-mini")
         client = OpenAI(
             api_key=api_key,
             base_url=url_llm,
@@ -114,7 +116,7 @@ class Visit(BaseTool):
                             content = content[left:right+1]
                     return content
             except Exception as e:
-                # print(e)
+                logger.debug(f"API call attempt {attempt + 1} failed: {str(e)}")
                 if attempt == (max_retries - 1):
                     return ""
                 continue
@@ -148,7 +150,7 @@ class Visit(BaseTool):
                     webpage_content = response.text
                     return webpage_content
                 else:
-                    print(response.text)
+                    logger.debug(f"Jina API error response: {response.text}")
                     raise ValueError("jina readpage error")
             except Exception as e:
                 time.sleep(0.5)
@@ -162,7 +164,7 @@ class Visit(BaseTool):
         for attempt in range(max_attempts):
             content = self.jina_readpage(url)
             service = "jina"     
-            print(service)
+            logger.debug(f"Using service: {service}")
             if content and not content.startswith("[visit] Failed to read page.") and content != "[visit] Empty content." and not content.startswith("[document_parser]"):
                 return content
         return "[visit] Failed to read page."
@@ -201,7 +203,7 @@ class Visit(BaseTool):
                     f"[visit] Summary url[{url}] failed after 3 attempts, "
                     f"final truncation to 25000 chars"
                 )
-                print(status_msg)
+                logger.debug(status_msg)
                 content = content[:truncate_length]
                 extraction_prompt = EXTRACTOR_PROMPT.format(
                     webpage_content=content,
@@ -232,7 +234,7 @@ class Visit(BaseTool):
                 useful_information += "Summary: \n" + str(raw["summary"]) + "\n\n"
 
             if len(useful_information) < 10 and summary_retries < 0:
-                print("[visit] Could not generate valid summary after maximum retries")
+                logger.debug("[visit] Could not generate valid summary after maximum retries")
                 useful_information = "[visit] Failed to read page"
             
             return useful_information
@@ -246,7 +248,7 @@ class Visit(BaseTool):
 
 # add demo
 if __name__ == '__main__':
-    print("JINA_API_KEY:", JINA_API_KEY)
+    logger.debug(f"JINA_API_KEY: {JINA_API_KEY}")
     visit_tool = Visit()
     url = "https://en.wikipedia.org/wiki/Artificial_intelligence"
     goal = "Explain the history of artificial intelligence."
@@ -255,4 +257,4 @@ if __name__ == '__main__':
         "goal": goal
     }
     response = visit_tool.call(params)
-    print("Response:", response)
+    logger.debug(f"Response: {response}")

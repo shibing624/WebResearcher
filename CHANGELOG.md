@@ -5,6 +5,27 @@ All notable changes to WebResearcher will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2025-10-26
+
+### Added
+- **Unified Logging Management**: New `webresearcher.logger` module for centralized log control
+  - `logger`: Pre-configured logger instance for all modules
+  - `set_log_level()`: Dynamically set log level for entire package
+  - `add_file_logger()`: Add file logging with automatic rotation and compression
+  - Support for `WEBRESEARCHER_LOG_LEVEL` environment variable
+- Comprehensive logging documentation in README
+
+### Changed
+- All modules now use unified logger from `webresearcher.logger`
+- Package exports now include `logger`, `set_log_level`, and `add_file_logger`
+
+### Fixed
+- Added missing `import os` in `webresearcher/tool_file.py`
+
+### Documentation
+- Updated README.md and README_zh.md with logging management section
+- Added LOGGING_MIGRATION.md for migration guide
+
 ## [0.1.2] - 2025-10-26
 
 ### Changed
