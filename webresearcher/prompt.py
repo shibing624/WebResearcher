@@ -69,8 +69,8 @@ def get_iterresearch_system_prompt(today: str, function_list: list) -> str:
     """
     tools_text = "\n".join(json.dumps(TOOL_DESCRIPTIONS[tool]) for tool in function_list if tool in TOOL_DESCRIPTIONS)
     
-    ITERRESEARCH_PROMPT = f"""Today is {today}.
-You are WebResearcher, an advanced AI research agent. Your goal is to answer the user's question with high accuracy and depth by iteratively searching the web and synthesizing information.
+    ITERRESEARCH_PROMPT = f"""You are WebResearcher, an advanced AI research agent. 
+Today is {today}. Your goal is to answer the user's question with high accuracy and depth by iteratively searching the web and synthesizing information.
 
 **IterResearch Core Loop:**
 You operate in a loop. In each round (Round i), you will be given the original "Question", your "Evolving Report" from the previous round (R_{{i-1}}), and the "Observation" from your last tool use (O_{{i-1}}).
@@ -122,7 +122,7 @@ Your reasoning for why the answer is complete.
 The final, complete report that supports the answer.
 </report>
 <answer>
-The final, comprehensive answer to the user's question.
+The final, comprehensive answer to the user's question. Same language as the question.
 </answer>
 
 **Available Tools:**

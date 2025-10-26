@@ -43,7 +43,7 @@ def today_date():
 
 class ResearchRound:
     """
-    实现了 IterResearch 范式的核心状态管理器（简化版）。
+    实现了 IterResearch 范式的核心状态管理器。
     
     状态只包含用于构建下一个提示的核心信息：
     - question (Q): 原始问题
@@ -119,19 +119,20 @@ class WebResearcherAgent:
         think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
         if think_match:
             output["think"] = think_match.group(1).strip()
-        else:
-            logger.warning("LLM output did not contain <think> tag.")
 
         # 2. 提取 <report>
         report_match = re.search(r'<report>(.*?)</report>', text, re.DOTALL)
         if report_match:
             output["report"] = report_match.group(1).strip()
-        else:
-            logger.warning("LLM output did not contain <report> tag.")
 
         # 3. 提取 <tool_call> 或 <answer>
         tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL)
-        answer_match = re.search(r'<answer>(.*?)</answer>', text, re.DOTALL)
+        answer_matches = re.findall(r'<answer>(.*?)</answer>', text, re.DOTALL)
+        if answer_matches:
+            answer_str = "\n".join([match.strip() for match in answer_matches if match.strip()])
+            answer_str = answer_str.strip()
+        else:
+            answer_str = None
 
         if tool_call_match:
             tool_call_content = tool_call_match.group(1).strip()
@@ -140,8 +141,8 @@ class WebResearcherAgent:
                 output["tool_call"] = tool_call_content
             else:
                 output["tool_call"] = tool_call_content
-        elif answer_match:
-            output["answer"] = answer_match.group(1).strip()
+        elif answer_str:
+            output["answer"] = answer_str
         else:
             logger.warning("LLM output did not contain <tool_call> or <answer> tag.")
 
@@ -149,7 +150,7 @@ class WebResearcherAgent:
 
     async def call_server(self, msgs: List[Dict], stop_sequences: List[str] = None,
                           max_tries: int = 1) -> str:
-        """改为 async 异步方法，并使用 run_in_executor 处理同步的 OpenAI 库"""
+        """异步方法，并使用 run_in_executor 处理同步的 OpenAI 库"""
         client = OpenAI(
             api_key=OPENAI_API_KEY,
             base_url=OPENAI_BASE_URL,
@@ -189,10 +190,8 @@ class WebResearcherAgent:
                 if hasattr(chat_response.choices[0].message, 'reasoning_content') and chat_response.choices[
                     0].message.reasoning_content:
                     reasoning_content = chat_response.choices[0].message.reasoning_content
-                    content = f"<think>{reasoning_content}</think>\n{content}"
-                
-                # logger.debug(f"input messages: {msgs}, \nLLM Response: {content}, \nreasoning_content: {reasoning_content}")
-
+                    content = f"<reasoning>{reasoning_content}</reasoning>\n{content}"
+                # logger.debug(f"input messages: {msgs}, \nLLM Response: {content}\nreasoning_content: {reasoning_content}")
                 if content and content.strip():
                     return content.strip()
                 else:
@@ -206,7 +205,7 @@ class WebResearcherAgent:
             if attempt < max_tries - 1:
                 sleep_time = base_sleep_time * (2 ** attempt) + random.uniform(0, 1)
                 sleep_time = min(sleep_time, 30)
-                logger.info(f"Retrying in {sleep_time:.2f}s...")
+                logger.warning(f"Retrying in {sleep_time:.2f}s...")
                 await asyncio.sleep(sleep_time)  # [关键] 使用 await asyncio.sleep
             else:
                 logger.error("All retry attempts exhausted. The LLM call failed.")
@@ -232,7 +231,7 @@ class WebResearcherAgent:
             return sum(len(str(x).split()) for x in messages)
 
     async def custom_call_tool(self, tool_call_str: str) -> str:
-        """[已修复] 改为 async，并正确处理同步/异步工具"""
+        """async方法，并正确处理同步/异步工具"""
         loop = asyncio.get_event_loop()
 
         try:
@@ -343,10 +342,10 @@ class WebResearcherAgent:
             action_content = parsed["tool_call"]
             answer_content = parsed["answer"]
 
-            logger.debug(f"Round {round_num} - Think: {think_content[:100] if think_content else 'None'}...")
-            logger.debug(f"Round {round_num} - Report: {report_content[:100] if report_content else 'None'}...")
-            logger.debug(f"Round {round_num} - Action: {action_content if action_content else 'None'}")
-            logger.debug(f"Round {round_num} - Answer: {answer_content if answer_content else 'None'}")
+            logger.debug(f"Round {round_num} - Think: {think_content}")
+            logger.debug(f"Round {round_num} - Report: {report_content}")
+            logger.debug(f"Round {round_num} - Action: {action_content}")
+            logger.debug(f"Round {round_num} - Answer: {answer_content}")
 
             # 5. 状态更新 (s_t -> s_{t+1})
             
@@ -363,13 +362,13 @@ class WebResearcherAgent:
             if answer_content:
                 prediction = answer_content
                 termination = 'answer found'
-                logger.info(f"Round {round_num}: LLM provided <answer>. Terminating loop.")
+                logger.debug(f"Round {round_num}: LLM provided <answer>. Terminating loop.")
                 break
 
             # 5.3 执行 Action (A_i)
             if action_content:
                 try:
-                    logger.info(f"Round {round_num}: Executing tool...")
+                    logger.debug(f"Round {round_num}: Executing tool...")
                     tool_response_str = await self.custom_call_tool(action_content)
                     
                     # 将工具响应 O_i 存储，用于下一轮 s_{t+1}
@@ -482,7 +481,7 @@ async def main():
     final_result = await agent.run(question)
 
     # 5. 打印结果
-    logger.info(f"final_result: {final_result}")
+    print(f"final_result: {final_result}")
 
 
 if __name__ == "__main__":

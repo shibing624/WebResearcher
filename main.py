@@ -20,12 +20,12 @@ async def main(args):
     # 1. 定义 LLM 配置
     llm_config = {
         "model": args.model,
+        "model_thinking_type": args.model_thinking_type,
         "generate_cfg": {
             'max_input_tokens': args.max_input_tokens,
             "temperature": args.temperature,
             "top_p": args.top_p,
             "presence_penalty": args.presence_penalty,
-            "model_thinking_type": args.model_thinking_type,
         }
     }
 
@@ -56,11 +56,11 @@ async def main(args):
     # 3. 准备输入数据 (与原始的 `run` 格式一致)
     input_data = [
         {
-            "question": "刘翔破纪录时候是多少岁?",
-            "answer": "23岁差2天"},
-        {
             "question": "20世纪二十年代中在上海成立的刊物成为了我国知名学生运动的先导，在此次运动中占据领导地位的高校在近百年后有一名在21世纪初某少儿电视剧中扮演重要角色的演员入学，那么请问在此电视剧中的男一号是什么时间结婚",
             "answer": "2019年4月23日"},
+        {
+            "question": "刘翔破纪录时候是多少岁?",
+            "answer": "23岁差2天"},
         {
             "question": "请根据以下线索找出这位艺术家的姓名：曾在中国中央美术学院及德国杜塞尔多夫艺术学院深造，并赴德国留学。在德国学习期间，他师从三位知名艺术家，其中一位艺术家的作品曾在2012年创下在世艺术家拍卖的最高价纪录",
             "answer": "苏笑柏"},
