@@ -6,12 +6,12 @@ import asyncio
 import random
 import time
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 from openai import OpenAI, APIError, APIConnectionError, APITimeoutError
 
-from webresearcher.base import Message, BaseTool, build_text_completion_prompt, count_tokens as count_tokens_base
+from webresearcher.base import Message, build_text_completion_prompt, count_tokens as count_tokens_base
 from webresearcher.logger import logger
-from webresearcher.prompt import get_system_prompt, get_iterresearch_system_prompt
+from webresearcher.prompt import get_iterresearch_system_prompt
 from webresearcher.tool_file import FileParser
 from webresearcher.tool_scholar import Scholar
 from webresearcher.tool_python import PythonInterpreter
@@ -191,7 +191,7 @@ class WebResearcherAgent:
                     0].message.reasoning_content:
                     reasoning_content = chat_response.choices[0].message.reasoning_content
                     content = f"<reasoning>{reasoning_content}</reasoning>\n{content}"
-                # logger.debug(f"input messages: {msgs}, \nLLM Response: {content}\nreasoning_content: {reasoning_content}")
+                # logger.debug(f"input messages: {msgs}, \nLLM Response: {content}")
                 if content and content.strip():
                     return content.strip()
                 else:
