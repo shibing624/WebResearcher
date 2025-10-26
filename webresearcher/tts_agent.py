@@ -38,9 +38,12 @@ class TestTimeScalingAgent:
     """
     Test-Time Scaling (TTS) Agent with parallel research and synthesis.
     
-    This agent runs multiple IterResearch agents in parallel with different
-    temperatures to encourage diverse exploration paths, then synthesizes
-    their findings into a final answer.
+    This agent runs multiple IterResearch agents (WebResearcherAgent) in parallel 
+    with different temperatures to encourage diverse exploration paths, then 
+    synthesizes their findings into a final answer.
+    
+    Each parallel agent follows the IterResearch paradigm (single LLM call per round
+    generating Think + Report + Action), ensuring efficient and coherent research.
     
     This is analogous to:
     - Self-Consistency sampling in chain-of-thought

@@ -11,7 +11,7 @@ from openai import OpenAI, APIError, APIConnectionError, APITimeoutError
 
 from webresearcher.base import Message, BaseTool, build_text_completion_prompt, count_tokens as count_tokens_base
 from webresearcher.logger import logger
-from webresearcher.prompt import get_system_prompt
+from webresearcher.prompt import get_system_prompt, get_iterresearch_system_prompt
 from webresearcher.tool_file import FileParser
 from webresearcher.tool_scholar import Scholar
 from webresearcher.tool_python import PythonInterpreter
@@ -43,75 +43,38 @@ def today_date():
 
 class ResearchRound:
     """
-    实现了 IterResearch 范式的核心状态管理器。
-    这取代了"单上下文"的 `messages` 列表。
+    实现了 IterResearch 范式的核心状态管理器（简化版）。
+    
+    状态只包含用于构建下一个提示的核心信息：
+    - question (Q): 原始问题
+    - current_report (R_{i-1}): 上一轮生成的报告
+    - last_observation (O_{i-1}): 上一轮工具调用的结果
     """
 
     def __init__(self, question: str):
-        self.question = question  # 原始问题（固定）
-        self.prev_report = "无"  # 上轮总结报告（核心记忆），初始为空
-        self.last_tool_res = None  # 上一轮工具结果（用于输入到本轮 get_context）
-        self.pending_tool_res = None  # 本轮待综合的工具结果（用于 synthesize_report）
-        self.pending_think = ""  # 本轮待综合的思考过程（用于 synthesize_report）
+        self.question = question
+        
+        # R_{i-1}: 上一轮生成的报告，初始为空
+        self.current_report = "This is the first round. The report is empty."
+        
+        # O_{i-1}: 上一轮工具调用的结果，初始为空
+        self.last_observation = "This is the first round. No tool has been called yet."
 
     def get_context(self, system_prompt: str) -> List[Dict]:
         """
-        生成本轮精简上下文（仅含必要信息，避免臃肿）。
-        这是 IterResearch 的核心：状态只包含 (问题, 上轮报告, 上一轮工具结果)。
+        构建当前轮次的精简上下文。
+        这代表了论文中的 Workspace，即状态 s_t = (Q, R_{i-1}, O_{i-1})
         """
-        context = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"【研究问题】\n{self.question}"},
-            {"role": "user", "content": f"【上轮研究总结】\n{self.prev_report}"},
-        ]
-        # 添加上一轮工具结果（若有），作为 Workspace 的一部分
-        if self.last_tool_res:
-            context.append({"role": "user", "content": f"【上轮工具结果】\n{self.last_tool_res}"})
-
-        return context
-
-    def set_pending_data(self, think: str, tool_res: str):
-        """暂存本轮的思考和工具结果，以便 synthesize_report 使用"""
-        self.pending_think = think
-        self.pending_tool_res = tool_res
-
-    async def synthesize_report(self, llm_agent: 'WebResearcherAgent'):
-        """
-        每轮工具调用后更新报告（核心：合并新信息，过滤噪音）。
-        这是一个 LLM 调用，用于"综合" (synthesize)。
-        """
-        if not self.pending_tool_res:
-            logger.warning("synthesize_report called with no pending tool result. Skipping.")
-            return
-
-        # logger.info("Synthesizing new report...")
-        report_prompt = [
-            {"role": "system", "content": (
-                "你是一个研究报告综合器。\n"
-                "你的任务是基于【上轮报告】、【本轮思考】和【本轮工具结果】，生成一份更新、更精炼的【新研究报告】。\n"
-                "规则:\n"
-                "1. 整合新信息：将【本轮工具结果】中的关键发现融入报告。\n"
-                "2. 修正与去重：根据【本轮思考】，修正【上轮报告】中的错误，并删除重复或不再相关的信息。\n"
-                "3. 保持连贯：确保新报告是一个逻辑清晰、事实准确的完整总结。\n"
-                "4. 只输出报告内容，不要说其他的话。"
-            )},
-            {"role": "user", "content": f"【上轮报告】\n{self.prev_report}"},
-            {"role": "user", "content": f"【本轮思考】\n{self.pending_think}"},
-            {"role": "user", "content": f"【本轮工具结果】\n{self.pending_tool_res}"}
-        ]
-
-        # 使用 llm_agent 的 call_server 方法进行异步调用
-        new_report = await llm_agent.call_server(report_prompt, stop_sequences=["<tool_response>"])
-
-        self.prev_report = new_report.strip() if new_report else self.prev_report
-
-        # [关键] 将本轮的工具结果转移为下一轮的输入
-        self.last_tool_res = self.pending_tool_res
+        user_content = (
+            f"**Question:** {self.question}\n\n"
+            f"**Current Report (R_{{i-1}}):**\n{self.current_report}\n\n"
+            f"**Last Observation (O_{{i-1}}):**\n{self.last_observation}"
+        )
         
-        # 清理待综合数据
-        self.pending_tool_res = None
-        self.pending_think = ""
-        # logger.info(f"Report updated.")
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
+        ]
 
 
 class WebResearcherAgent:
@@ -142,40 +105,47 @@ class WebResearcherAgent:
 
     def parse_output(self, text: str) -> Dict[str, str]:
         """
-        从 LLM 输出中解析标签。
-        优先级：answer > tool_call > think
-        使用非贪婪匹配，确保正确提取可能嵌套的标签。
+        解析 LLM 的单次输出，严格提取 <think>, <report>, 和 (<tool_call> 或 <answer>)。
+        这是 IterResearch 范式的核心：LLM 在单次调用中生成三段式输出。
         """
-        # 1. 提取 answer（最终答案）- 使用 findall 捕获所有 answer 标签
-        answer_matches = re.findall(r'<answer>(.*?)</answer>', text, re.DOTALL)
-        if answer_matches:
-            # 如果有多个 answer，拼接它们
-            answer_str = "\n".join([match.strip() for match in answer_matches if match.strip()])
-            answer_str = answer_str.strip()
+        output = {
+            "think": "",
+            "report": "",
+            "tool_call": "",
+            "answer": ""
+        }
+
+        # 1. 提取 <think>
+        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
+        if think_match:
+            output["think"] = think_match.group(1).strip()
         else:
-            answer_str = None
-        
-        # 2. 提取 tool_call（工具调用）
+            logger.warning("LLM output did not contain <think> tag.")
+
+        # 2. 提取 <report>
+        report_match = re.search(r'<report>(.*?)</report>', text, re.DOTALL)
+        if report_match:
+            output["report"] = report_match.group(1).strip()
+        else:
+            logger.warning("LLM output did not contain <report> tag.")
+
+        # 3. 提取 <tool_call> 或 <answer>
         tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL)
-        
+        answer_match = re.search(r'<answer>(.*?)</answer>', text, re.DOTALL)
+
         if tool_call_match:
             tool_call_content = tool_call_match.group(1).strip()
             # 处理 Python 代码块的特殊格式
             if "python\n<code>" in tool_call_content or "<code>" in tool_call_content:
-                tool_call_str = tool_call_content
+                output["tool_call"] = tool_call_content
             else:
-                tool_call_str = tool_call_content
+                output["tool_call"] = tool_call_content
+        elif answer_match:
+            output["answer"] = answer_match.group(1).strip()
         else:
-            tool_call_str = None
-        
-        # 3. 提取 think（思考过程）
-        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
-        think_str = think_match.group(1).strip() if think_match else None
-        return {
-            "think": think_str,
-            "tool_call": tool_call_str,
-            "answer": answer_str,
-        }
+            logger.warning("LLM output did not contain <tool_call> or <answer> tag.")
+
+        return output
 
     async def call_server(self, msgs: List[Dict], stop_sequences: List[str] = None,
                           max_tries: int = 1) -> str:
@@ -303,13 +273,27 @@ class WebResearcherAgent:
             return f"Error: Tool call failed. Input: {tool_call_str}. Error: {e}"
 
     async def run(self, question):
+        """
+        严格按照 IterResearch 范式执行研究（单 LLM 调用）。
+        
+        循环如下:
+        s_t = (Q, R_{i-1}, O_{i-1})
+        LLM(s_t) -> (Think_i, Report_i, Action_i)
+        
+        if Action_i == <answer>:
+            STOP
+        else:
+            O_i = Tool(Action_i)
+            s_{t+1} = (Q, R_i, O_i)
+            LOOP
+        """
         start_time = time.time()
 
-        # 1. 初始化研究轮次（仅携带问题，无历史冗余）
+        # 1. 初始化研究轮次
         research_round = ResearchRound(question=question)
-        system_prompt = get_system_prompt(self.function_list) + str(today_date())
+        system_prompt = get_iterresearch_system_prompt(today_date(), self.function_list)
 
-        # 'full_trajectory_log' 仅用于调试和日志记录，*不*用于生成提示
+        # 完整轨迹日志（用于调试）
         full_trajectory_log = []
         prediction = ''
         termination = ''
@@ -318,7 +302,7 @@ class WebResearcherAgent:
         round_num = 0
 
         while num_llm_calls_available > 0:
-            if time.time() - start_time > self.agent_timeout:  # 3 minutes in seconds
+            if time.time() - start_time > self.agent_timeout:
                 logger.warning("Agent timeout reached.")
                 termination = "timeout"
                 prediction = "No answer found (timeout)."
@@ -327,58 +311,92 @@ class WebResearcherAgent:
             round_num += 1
             num_llm_calls_available -= 1
 
-            # 2. 生成本轮精简上下文（仅含问题+上轮报告+最新工具结果）
+            # 2. 构建提示 (s_t = Q, R_{i-1}, O_{i-1})
             current_context = research_round.get_context(system_prompt)
+            
             if round_num == 1:
                 full_trajectory_log.extend(current_context)  # 仅记录初始上下文
 
-            # 3. 调用LLM获取“思考+工具调用/答案”（论文中的Think-Action组件）
-            content = await self.call_server(current_context)
-            full_trajectory_log.append({"role": "assistant", "content": content})
-
-            logger.debug(f'Round {round_num}: {content}')
-
-            # 4. 解析输出 (Think, Action/Answer)
-            parsed = self.parse_output(content)
-            # logger.debug(f"Parsed output: {parsed}")
-
-            # 5. 检查是否为最终答案
-            if parsed["answer"]:
-                logger.debug("Final answer found.")
-                prediction = parsed["answer"]
-                termination = "answer"
-                break  # 成功退出循环
-
-            # 6. 检查是否为工具调用
-            elif parsed["tool_call"]:
-                logger.debug(f"Executing tool: {parsed['tool_call'][:100]}...")
-                result = await self.custom_call_tool(parsed["tool_call"])
-
-                tool_response_log = f"<tool_response>\n{result}\n</tool_response>"
-                full_trajectory_log.append({"role": "user", "content": tool_response_log})
-
-                # 7. [关键] 更新 IterResearch 状态
-                # 7a. 暂存思考和工具结果
-                research_round.set_pending_data(think=parsed["think"] or "", tool_res=result)
-
-                # 7b. [核心] 调用 LLM 进行"综合"，更新中央记忆 (prev_report)
-                # synthesize_report 内部会：
-                # - 将 pending_tool_res 融合到 prev_report
-                # - 将 pending_tool_res 转移为 last_tool_res（供下一轮输入使用）
-                # - 清空 pending_tool_res 和 pending_think
-                await research_round.synthesize_report(self)
-
-            else:
-                # 格式错误：LLM 没有生成 answer 或 tool_call
-                logger.warning("⚠️ LLM did not produce <answer> or <tool_call>. Forcing answer generation...")
+            # 3. 单次 LLM 调用 (生成 T_i, R_i, A_i)
+            try:
+                logger.debug(f"Round {round_num}: Calling LLM. Remaining calls: {num_llm_calls_available}")
+                content = await self.call_server(current_context)
                 
-                # 强制生成答案：基于当前研究报告要求 LLM 给出最终答案
+                full_trajectory_log.append({"role": "assistant", "content": content})
+                logger.debug(f'Round {round_num} LLM response received.')
+
+            except (APIError, APIConnectionError, APITimeoutError) as e:
+                logger.error(f"API Error: {e}")
+                prediction = f"Error: API Error {e}"
+                termination = 'api error'
+                break
+            except Exception as e:
+                logger.error(f"Unknown Error: {e}")
+                prediction = f"Error: Unknown {e}"
+                termination = 'unknown error'
+                break
+
+            # 4. 解析 LLM 的结构化输出 (T_i, R_i, A_i / Answer_i)
+            parsed = self.parse_output(content)
+            think_content = parsed["think"]
+            report_content = parsed["report"]
+            action_content = parsed["tool_call"]
+            answer_content = parsed["answer"]
+
+            logger.debug(f"Round {round_num} - Think: {think_content[:100] if think_content else 'None'}...")
+            logger.debug(f"Round {round_num} - Report: {report_content[:100] if report_content else 'None'}...")
+            logger.debug(f"Round {round_num} - Action: {action_content if action_content else 'None'}")
+            logger.debug(f"Round {round_num} - Answer: {answer_content if answer_content else 'None'}")
+
+            # 5. 状态更新 (s_t -> s_{t+1})
+            
+            # 5.1 更新报告 (R_i)
+            # 无论 LLM 接下来是调用工具还是回答，它都必须生成一份新报告。
+            # 这份新报告 R_i 将用于 s_{t+1}
+            if report_content:
+                research_round.current_report = report_content
+            else:
+                # 如果LLM没有生成新报告，我们沿用上一轮的报告
+                logger.warning("No <report> found. Report will not be updated for the next round.")
+
+            # 5.2 检查是否终止
+            if answer_content:
+                prediction = answer_content
+                termination = 'answer found'
+                logger.info(f"Round {round_num}: LLM provided <answer>. Terminating loop.")
+                break
+
+            # 5.3 执行 Action (A_i)
+            if action_content:
+                try:
+                    logger.info(f"Round {round_num}: Executing tool...")
+                    tool_response_str = await self.custom_call_tool(action_content)
+                    
+                    # 将工具响应 O_i 存储，用于下一轮 s_{t+1}
+                    research_round.last_observation = tool_response_str
+
+                    # 记录工具响应到完整日志
+                    tool_obs_msg = f"{OBS_START}\n{tool_response_str}\n{OBS_END}"
+                    full_trajectory_log.append({"role": "user", "content": tool_obs_msg})
+                    
+                    logger.debug(f"Round {round_num}: Tool execution completed.")
+
+                except Exception as e:
+                    logger.error(f"Error calling tool: {e}")
+                    error_str = f"Error executing tool: {e}"
+                    research_round.last_observation = error_str
+                    full_trajectory_log.append({"role": "user", "content": f"{OBS_START}\n{error_str}\n{OBS_END}"})
+            else:
+                # LLM 既没有回答也没有调用工具
+                logger.warning("LLM did not produce <answer> or <tool_call>. Forcing answer generation...")
+                
+                # 强制生成答案
                 force_answer_msgs = current_context + [
                     {"role": "user", "content": (
                         "You did not provide a valid response format. "
-                        "Based on the research summary and information gathered so far, "
+                        "Based on your current report and the information gathered so far, "
                         "please provide the final answer to the original question. "
-                        "Use <answer>...</answer> format."
+                        "Use the three-part format: <think>...</think> <report>...</report> <answer>...</answer>"
                     )}
                 ]
                 
@@ -402,7 +420,7 @@ class WebResearcherAgent:
                     termination = "format error"
                     break
 
-            # 8. Token 限制检查 (现在检查精简上下文，更不容易触发)
+            # 5.4 Token 限制检查
             token_count = self.count_tokens(current_context)
             logger.debug(f"Round {round_num} context token count: {token_count}")
             if token_count > self.max_input_tokens:
@@ -410,30 +428,31 @@ class WebResearcherAgent:
                 # 强制生成答案
                 force_answer_msgs = current_context + [
                     {"role": "user", "content": "You have now reached the maximum context length. "
-                                                "Stop making tool calls. Based on your research summary, "
-                                                "provide the final answer in <answer>...</answer> format."}
+                                                "Stop making tool calls. Based on your research report, "
+                                                "provide the final answer in the three-part format: "
+                                                "<think>...</think> <report>...</report> <answer>...</answer>"}
                 ]
                 content = await self.call_server(force_answer_msgs)
                 parsed = self.parse_output(content)
-                # logger.debug(f"Parsed output: {parsed}")
                 prediction = parsed["answer"] if parsed["answer"] else "No answer found (token limit)."
                 termination = 'token limit reached'
-                break  # 退出循环
+                full_trajectory_log.append({"role": "assistant", "content": content})
+                break
 
         # 循环结束后的收尾
-        if 'prediction' not in locals():
+        if not prediction:
             prediction = 'No answer found.'
             termination = 'answer not found'
             if num_llm_calls_available == 0:
                 termination = 'exceed available llm calls'
 
-        # [关键] 返回最终报告和答案，以供“整合”
+        # 返回最终结果
         result = {
             "question": question,
             "prediction": prediction,
-            "report": research_round.prev_report,
+            "report": research_round.current_report,
             "termination": termination,
-            "trajectory": full_trajectory_log,  # 完整日志
+            "trajectory": full_trajectory_log,
         }
         return result
 
