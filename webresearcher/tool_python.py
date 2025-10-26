@@ -1,4 +1,7 @@
 import re
+import sys
+import io
+import traceback
 from typing import Dict, List, Optional, Union
 import json5
 from sandbox_fusion import run_code, RunCodeRequest, RunStatus
@@ -36,8 +39,16 @@ class PythonInterpreter(BaseToolWithFileAccess):
         "required": ["code"],
     }
 
-    def __init__(self, cfg: Optional[Dict] = None):
+    def __init__(self, 
+                 cfg: Optional[Dict] = None,
+                 base_dir: Optional[str] = None,
+                 safe_globals: Optional[dict] = None,
+                 safe_locals: Optional[dict] = None):
         super().__init__()
+        self.base_dir: str = base_dir if base_dir else os.path.curdir
+        # Restricted global and local scope
+        self.safe_globals: dict = safe_globals or {}
+        self.safe_locals: dict = safe_locals or {}
 
     @property
     def args_format(self) -> str:
@@ -50,9 +61,37 @@ class PythonInterpreter(BaseToolWithFileAccess):
                 fmt = 'Enclose the code within triple backticks (`) at the beginning and end of the code.'
         return fmt
 
+    def run_python_code_locally(self, python_code: str) -> str:
+        """
+        Run Python code locally in the current environment (fallback when sandbox is unavailable).
+        
+        :param python_code: The code to run.
+        :return: Execution result or error message.
+        """
+        logger.debug(f"Running code locally:\n\n{python_code}\n\n")
+        old_stdout = sys.stdout
+        new_stdout = io.StringIO()
+        sys.stdout = new_stdout
+        
+        try:
+            # Compile the code to check for syntax errors
+            code = compile(python_code, '<string>', 'exec')
+            namespace = {}
+            # Execute the code
+            exec(code, namespace)
+            result = str(new_stdout.getvalue().strip())
+            return f"stdout:\n{result}" if result else "Finished execution."
+        except Exception as e:
+            error = str(e)
+            error_traceback = traceback.format_exc()
+            logger.error(f"Error: {error}\n\nTraceback:\n{error_traceback}")
+            return f"stderr:\nError: {error}\n\nTraceback:\n{error_traceback}"
+        finally:
+            sys.stdout = old_stdout
+            new_stdout.close()
+
     def observation(self, tool: dict, tool_dict: dict, tool_results, empty_mode: bool = False, readpage: bool = False,
                     max_observation_length: int = None, tokenizer=None):
-        print('test')
         assert isinstance(tool_results,
                           str), f"result of python code should be str, instead of {type(tool_results)}. {tool_results}"
         return tool_results
@@ -83,9 +122,10 @@ class PythonInterpreter(BaseToolWithFileAccess):
             if not code.strip():
                 return '[Python Interpreter Error]: Empty code.'
 
-            # Check if endpoints are available
-            if not SANDBOX_FUSION_ENDPOINTS:
-                return '[Python Interpreter Error]: No sandbox fusion endpoints available.'
+            # Check if endpoints are available, fallback to local execution
+            if not SANDBOX_FUSION_ENDPOINTS or SANDBOX_FUSION_ENDPOINTS == ['']:
+                logger.debug('No sandbox fusion endpoints available, falling back to local execution')
+                return self.run_python_code_locally(code)
 
             last_error = None
             for attempt in range(2):
@@ -113,7 +153,7 @@ class PythonInterpreter(BaseToolWithFileAccess):
                 except Timeout as e:
                     endpoint_info = f" on endpoint {endpoint}" if endpoint else ""
                     last_error = f'[Python Interpreter Error] TimeoutError: Execution timed out{endpoint_info}.'
-                    print(f"Timeout on attempt {attempt + 1}: {last_error}")
+                    logger.error(f"Timeout on attempt {attempt + 1}: {last_error}")
                     if attempt == 1:  # Last attempt (0-indexed, so 1 is the second attempt)
                         return last_error
                     continue
@@ -121,7 +161,7 @@ class PythonInterpreter(BaseToolWithFileAccess):
                 except Exception as e:
                     endpoint_info = f" on endpoint {endpoint}" if endpoint else ""
                     last_error = f'[Python Interpreter Error]: {str(e)}{endpoint_info}'
-                    print(f"Error on attempt {attempt + 1}: {last_error}")
+                    logger.error(f"Error on attempt {attempt + 1}: {last_error}")
                     if attempt == 1:  # Last attempt
                         return last_error
                     continue
@@ -171,9 +211,8 @@ class PythonInterpreter(BaseToolWithFileAccess):
             return False, f'[Python Interpreter Error]: {str(e)}', None
 
 
-# add demo
 if __name__ == '__main__':
-    logger.debug(f"Sandbox Fusion Endpoints: {SANDBOX_FUSION_ENDPOINTS}")
+    logger.info(f"Sandbox Fusion Endpoints: {SANDBOX_FUSION_ENDPOINTS}")
     interpreter = PythonInterpreter()
     code = """print("Hello, World!")\nfor i in range(5):\n    print(i)"""
     result = interpreter.call({'code': code})

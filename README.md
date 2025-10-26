@@ -199,6 +199,31 @@ for question in questions:
 
 See [examples/batch_research.py](./examples/batch_research.py) for advanced batch processing.
 
+### Python Interpreter Configuration
+
+The `PythonInterpreter` tool supports two execution modes:
+
+**1. Sandbox Mode (Recommended for Production):**
+```bash
+# Configure sandbox endpoints
+export SANDBOX_FUSION_ENDPOINTS="http://your-sandbox-endpoint.com"
+```
+
+**2. Local Mode (Automatic Fallback):**
+- When `SANDBOX_FUSION_ENDPOINTS` is not configured, code executes locally
+- Useful for development and testing
+- ⚠️ **Warning**: Local execution runs code in the current Python environment
+
+```python
+from webresearcher import PythonInterpreter
+
+# Will use sandbox if configured, otherwise falls back to local execution
+interpreter = PythonInterpreter()
+result = interpreter.call({'code': 'print("Hello, World!")'})
+```
+
+See [examples/python_interpreter_example.py](./examples/python_interpreter_example.py) for more examples.
+
 ### Logging Management
 
 WebResearcher provides unified logging control for the entire package. You can control log levels via environment variables or programmatically:

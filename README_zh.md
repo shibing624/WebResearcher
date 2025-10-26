@@ -199,6 +199,31 @@ for question in questions:
 
 查看 [examples/batch_research.py](./examples/batch_research.py) 获取高级批量处理示例。
 
+### Python 解释器配置
+
+`PythonInterpreter` 工具支持两种执行模式：
+
+**1. 沙箱模式（生产环境推荐）：**
+```bash
+# 配置沙箱端点
+export SANDBOX_FUSION_ENDPOINTS="http://your-sandbox-endpoint.com"
+```
+
+**2. 本地模式（自动降级）：**
+- 当未配置 `SANDBOX_FUSION_ENDPOINTS` 时，代码在本地执行
+- 适用于开发和测试
+- ⚠️ **警告**：本地执行会在当前 Python 环境中运行代码
+
+```python
+from webresearcher import PythonInterpreter
+
+# 如果配置了沙箱则使用沙箱，否则降级到本地执行
+interpreter = PythonInterpreter()
+result = interpreter.call({'code': 'print("Hello, World!")'})
+```
+
+详细示例请参考 [examples/python_interpreter_example.py](./examples/python_interpreter_example.py)。
+
 ### 日志管理
 
 WebResearcher 提供了统一的日志管理系统，可以通过环境变量或编程方式控制日志级别：

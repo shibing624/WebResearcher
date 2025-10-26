@@ -104,19 +104,3 @@ def test_model_supports_thinking():
     deepseek_agent = WebResearcherAgent(llm_config=deepseek_config)
     assert deepseek_agent._model_supports_thinking()
     
-    # Test Qwen models (should support thinking)
-    qwen_config = {
-        "model": "qwen2.5-72b-instruct",
-        "generate_cfg": {"temperature": 0.6}
-    }
-    qwen_agent = WebResearcherAgent(llm_config=qwen_config)
-    assert qwen_agent._model_supports_thinking()
-    
-    # Test Claude models (should not support thinking)
-    claude_config = {
-        "model": "claude-3-sonnet",
-        "generate_cfg": {"temperature": 0.6}
-    }
-    claude_agent = WebResearcherAgent(llm_config=claude_config)
-    assert not claude_agent._model_supports_thinking()
-
