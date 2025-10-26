@@ -61,7 +61,7 @@ pytest
 pytest --cov=webresearcher
 
 # Run specific test
-pytest tests/test_react_agent.py
+pytest tests/test_agent.py
 ```
 
 ## Questions?

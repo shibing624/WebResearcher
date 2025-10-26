@@ -2,11 +2,6 @@
 """
 @author:XuMing(xuming624@qq.com)
 @description: Base classes and utilities for WebResearcher
-
-This module provides core abstractions to replace qwen_agent dependencies:
-- Message schema for LLM communication
-- BaseTool abstract class for tool implementation
-- Utility functions for token counting and code extraction
 """
 
 import re
@@ -55,7 +50,6 @@ class ContentItem:
 class Message:
     """
     Message format for LLM communication.
-    Replaces qwen_agent.llm.schema.Message
     """
     role: str
     content: Union[str, List[ContentItem]] = ""
@@ -102,7 +96,6 @@ class Message:
 class BaseTool(ABC):
     """
     Base class for all tools.
-    Replaces qwen_agent.tools.base.BaseTool
     """
     
     name: str = ""
@@ -144,7 +137,6 @@ class BaseTool(ABC):
 class BaseToolWithFileAccess(BaseTool):
     """
     Base class for tools that need file system access.
-    Replaces qwen_agent.tools.base.BaseToolWithFileAccess
     """
     
     def __init__(self, file_root_path: str = "./files"):
@@ -177,7 +169,6 @@ class BaseToolWithFileAccess(BaseTool):
 def extract_code(text: str, start_tag: str = "<code>", end_tag: str = "</code>") -> str:
     """
     Extract code block from text.
-    Replaces qwen_agent.utils.utils.extract_code
     
     Args:
         text: Text containing code block
@@ -195,7 +186,6 @@ def extract_code(text: str, start_tag: str = "<code>", end_tag: str = "</code>")
 def count_tokens(text: str, model: str = "gpt-4o") -> int:
     """
     Count tokens in text using tiktoken.
-    Replaces qwen_agent.utils.tokenization_qwen.count_tokens
     
     Args:
         text: Input text
@@ -241,7 +231,6 @@ def build_text_completion_prompt(messages: List[Union[Message, Dict]],
                                  allow_special: bool = False) -> str:
     """
     Build text completion prompt from messages (for token counting).
-    Replaces qwen_agent.file_tools.utils.build_text_completion_prompt
     
     Args:
         messages: List of Message objects or dicts
@@ -294,7 +283,6 @@ class KeyNotExistsError(Exception):
 class Storage:
     """
     Simple in-memory storage.
-    Replaces qwen_agent.tools.storage.Storage for basic use cases.
     """
     
     def __init__(self, root_path: str = DEFAULT_WORKSPACE):

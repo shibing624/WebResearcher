@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Tests for react_agent module
+Tests for agent module
 """
 import pytest
-from webresearcher.react_agent import MultiTurnReactAgent, ResearchRound
+from webresearcher.agent import WebResearcherAgent, ResearchRound
 
 
 def test_research_round_init():
@@ -43,7 +43,7 @@ def test_agent_parse_output_answer():
         "model": "gpt-4o",
         "generate_cfg": {"temperature": 0.6}
     }
-    agent = MultiTurnReactAgent(llm_config=llm_config)
+    agent = WebResearcherAgent(llm_config=llm_config)
     
     text = "<think>Reasoning here</think>\n<answer>Final answer</answer>"
     parsed = agent.parse_output(text)
@@ -59,7 +59,7 @@ def test_agent_parse_output_tool_call():
         "model": "gpt-4o",
         "generate_cfg": {"temperature": 0.6}
     }
-    agent = MultiTurnReactAgent(llm_config=llm_config)
+    agent = WebResearcherAgent(llm_config=llm_config)
     
     text = '<think>Need to search</think>\n<tool_call>{"name": "search", "arguments": {"query": "test"}}</tool_call>'
     parsed = agent.parse_output(text)
@@ -76,7 +76,7 @@ def test_agent_parse_output_nested_answer():
         "model": "gpt-4o",
         "generate_cfg": {"temperature": 0.6}
     }
-    agent = MultiTurnReactAgent(llm_config=llm_config)
+    agent = WebResearcherAgent(llm_config=llm_config)
     
     # Case where answer appears after think
     text = "<think>Reasoning</think>\n<answer>Final answer</answer>"

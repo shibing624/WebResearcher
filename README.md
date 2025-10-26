@@ -120,7 +120,7 @@ webresearcher "Who won the Nobel Prize in Physics in 2024?"
 
 ```python
 import asyncio
-from webresearcher import MultiTurnReactAgent
+from webresearcher import WebResearcherAgent
 
 # Configure
 llm_config = {
@@ -129,7 +129,7 @@ llm_config = {
 }
 
 # Create agent
-agent = MultiTurnReactAgent(
+agent = WebResearcherAgent(
     llm_config=llm_config,
     function_list=["search", "google_scholar", "PythonInterpreter"]
 )
@@ -164,8 +164,7 @@ result = await agent.run("Complex question", num_parallel_agents=3)
 Create your own tools by extending `BaseTool`:
 
 ```python
-from webresearcher import BaseTool, MultiTurnReactAgent
-from webresearcher.react_agent import TOOL_MAP
+from webresearcher import BaseTool, WebResearcherAgent, TOOL_MAP
 
 class MyCustomTool(BaseTool):
     name = "my_tool"
@@ -178,7 +177,7 @@ class MyCustomTool(BaseTool):
 
 # Register and use
 TOOL_MAP['my_tool'] = MyCustomTool()
-agent = MultiTurnReactAgent(llm_config, function_list=["my_tool", "search"])
+agent = WebResearcherAgent(llm_config, function_list=["my_tool", "search"])
 ```
 
 See [examples/custom_agent.py](./examples/custom_agent.py) for full examples.
@@ -188,10 +187,10 @@ See [examples/custom_agent.py](./examples/custom_agent.py) for full examples.
 Process multiple questions efficiently:
 
 ```python
-from webresearcher import MultiTurnReactAgent
+from webresearcher import WebResearcherAgent
 
 questions = ["Question 1", "Question 2", "Question 3"]
-agent = MultiTurnReactAgent(llm_config)
+agent = WebResearcherAgent(llm_config)
 
 for question in questions:
     result = await agent.run(question)
@@ -248,7 +247,7 @@ Based on the paper's evaluation:
 
 ```bash
 # Required
-OPENAI_API_KEY=sk-...              # OpenAI API key
+OPENAI_API_KEY=...              # OpenAI API key
 SERPER_API_KEY=...                 # Serper API for Google Search
 
 # Optional

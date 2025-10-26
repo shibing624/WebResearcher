@@ -24,7 +24,7 @@ It's an OPTIONAL inference enhancement that trades cost (3-5x tokens) for higher
    - Cost-sensitive applications
    - Real-time interactions
 
-For 95% of use cases, prefer the single MultiTurnReactAgent (react_agent.py).
+For 95% of use cases, prefer the single WebResearcherAgent (agent.py).
 """
 
 import asyncio
@@ -32,7 +32,7 @@ from typing import Dict, List, Optional
 
 from loguru import logger
 
-from webresearcher.react_agent import MultiTurnReactAgent
+from webresearcher.agent import WebResearcherAgent
 
 
 class TestTimeScalingAgent:
@@ -113,7 +113,7 @@ class TestTimeScalingAgent:
             agent_llm_config["generate_cfg"]["temperature"] = base_temp + (i * 0.2)
             
             # Create agent instance
-            agent = MultiTurnReactAgent(
+            agent = WebResearcherAgent(
                 llm_config=agent_llm_config,
                 function_list=self.function_list,
             )
@@ -214,7 +214,7 @@ class TestTimeScalingAgent:
         synthesis_llm_config["generate_cfg"] = synthesis_llm_config.get("generate_cfg", {}).copy()
         synthesis_llm_config["generate_cfg"]["temperature"] = 0.2
 
-        synthesis_agent = MultiTurnReactAgent(
+        synthesis_agent = WebResearcherAgent(
             llm_config=synthesis_llm_config,
             function_list=[],  # Synthesis agent doesn't need tools
         )

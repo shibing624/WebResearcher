@@ -46,8 +46,8 @@ async def main(args):
         use_tts_mode = True
     else:
         logger.info("✅ Using single-agent mode (cost-effective)")
-        from webresearcher.react_agent import MultiTurnReactAgent
-        agent = MultiTurnReactAgent(
+        from webresearcher.agent import WebResearcherAgent
+        agent = WebResearcherAgent(
             llm_config=llm_config,
             function_list=args.function_list,
         )

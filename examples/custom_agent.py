@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from webresearcher import MultiTurnReactAgent, BaseTool
+from webresearcher import WebResearcherAgent, BaseTool
 
 
 class WikipediaTool(BaseTool):
@@ -96,14 +96,14 @@ async def example_custom_tool():
     }
     
     # Import standard tools
-    from webresearcher.react_agent import TOOL_MAP
+    from webresearcher.agent import TOOL_MAP
     
     # Register custom tool
     wiki_tool = WikipediaTool()
     TOOL_MAP['wikipedia'] = wiki_tool
     
     # Create agent with custom tool
-    agent = MultiTurnReactAgent(
+    agent = WebResearcherAgent(
         llm_config=llm_config,
         function_list=["search", "wikipedia"]  # Use both standard and custom tools
     )
@@ -156,13 +156,13 @@ async def example_multi_custom_tools():
         "generate_cfg": {"temperature": 0.6}
     }
     
-    from webresearcher.react_agent import TOOL_MAP
+    from webresearcher.agent import TOOL_MAP
     
     # Register multiple custom tools
     TOOL_MAP['wikipedia'] = WikipediaTool()
     TOOL_MAP['calculator'] = CalculatorTool()
     
-    agent = MultiTurnReactAgent(
+    agent = WebResearcherAgent(
         llm_config=llm_config,
         function_list=["search", "wikipedia", "calculator"]
     )

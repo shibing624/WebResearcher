@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from webresearcher import MultiTurnReactAgent
+from webresearcher import WebResearcherAgent
 
 
 async def example_basic_research():
@@ -32,7 +32,7 @@ async def example_basic_research():
     }
     
     # Create agent
-    agent = MultiTurnReactAgent(
+    agent = WebResearcherAgent(
         llm_config=llm_config,
         function_list=["search", "google_scholar", "PythonInterpreter"]
     )
@@ -60,7 +60,7 @@ async def example_custom_tools():
     }
     
     # Only use search and scholar (no Python)
-    agent = MultiTurnReactAgent(
+    agent = WebResearcherAgent(
         llm_config=llm_config,
         function_list=["search", "google_scholar"]
     )

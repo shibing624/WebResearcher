@@ -76,7 +76,7 @@ class ResearchRound:
         self.pending_think = think
         self.pending_tool_res = tool_res
 
-    async def synthesize_report(self, llm_agent: 'MultiTurnReactAgent'):
+    async def synthesize_report(self, llm_agent: 'WebResearcherAgent'):
         """
         每轮工具调用后更新报告（核心：合并新信息，过滤噪音）。
         这是一个 LLM 调用，用于"综合" (synthesize)。
@@ -115,10 +115,17 @@ class ResearchRound:
         # logger.info(f"Report updated.")
 
 
-class MultiTurnReactAgent:
+class WebResearcherAgent:
     """
-    Multi-turn ReAct agent implementing the IterResearch paradigm.
-    No longer inherits from FnCallAgent - fully independent implementation.
+    Web Research Agent implementing the IterResearch paradigm.
+    
+    The IterResearch paradigm uses a cyclical process of:
+    1. Workspace (question + previous report + last tool result)
+    2. Think-Action (LLM generates reasoning and action)
+    3. Tool Execution (execute the tool and get result)
+    4. Synthesis (update report by integrating new information)
+    
+    This agent is fully independent and does not inherit from external frameworks.
     """
     
     def __init__(
@@ -450,7 +457,7 @@ async def main():
     }
 
     # 2. 实例化 agent
-    agent = MultiTurnReactAgent(
+    agent = WebResearcherAgent(
         llm_config=llm_config,
         function_list=['search', 'PythonInterpreter']
     )

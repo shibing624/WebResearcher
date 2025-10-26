@@ -13,7 +13,7 @@ from loguru import logger
 
 load_dotenv()
 
-from webresearcher import MultiTurnReactAgent
+from webresearcher import WebResearcherAgent
 
 
 async def batch_research(questions, output_dir="./results"):
@@ -37,7 +37,7 @@ async def batch_research(questions, output_dir="./results"):
         }
     }
     
-    agent = MultiTurnReactAgent(
+    agent = WebResearcherAgent(
         llm_config=llm_config,
         function_list=["search", "google_scholar", "PythonInterpreter"]
     )

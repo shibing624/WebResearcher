@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release of WebResearcher
 - Implemented IterResearch paradigm for unbounded reasoning
-- Core agent: `MultiTurnReactAgent` with iterative synthesis
+- Core agent: `WebResearcherAgent` (formerly `MultiTurnReactAgent`) with iterative synthesis
 - Test-Time Scaling (TTS) agent for enhanced accuracy
 - Comprehensive tool suite:
   - Web search (via Serper API)

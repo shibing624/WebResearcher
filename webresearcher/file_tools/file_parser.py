@@ -12,7 +12,7 @@ from datetime import datetime
 from pandas.api.types import is_datetime64_any_dtype
 
 import pandas as pd
-from tabulate import tabulate
+
 from loguru import logger
 from webresearcher.base import (
     DEFAULT_WORKSPACE, 
@@ -58,7 +58,6 @@ class FileParserError(Exception):
 def clean_text(text: str) -> str:
     cleaners = [
         lambda x: re.sub(r'\n+', '\n', x),
-        lambda x: x.replace("Add to Qwen's Reading List", ''),
         lambda x: re.sub(r'-{6,}', '-----', x),
         lambda x: x.strip()
     ]
@@ -78,6 +77,7 @@ def get_plain_doc(doc: list):
 
 
 def df_to_markdown(df: pd.DataFrame) -> str:
+    from tabulate import tabulate
     df = df.dropna(how='all').fillna('')
     return tabulate(df, headers='keys', tablefmt='pipe', showindex=False)
 

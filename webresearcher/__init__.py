@@ -24,10 +24,14 @@ from webresearcher.base import (
     extract_code,
 )
 
-from webresearcher.react_agent import (
-    MultiTurnReactAgent,
+from webresearcher.agent import (
+    WebResearcherAgent,
     ResearchRound,
+    TOOL_MAP,
 )
+
+# Backward compatibility alias
+MultiTurnReactAgent = WebResearcherAgent
 
 from webresearcher.tts_agent import (
     TestTimeScalingAgent,
@@ -47,9 +51,11 @@ __all__ = [
     "__email__",
     
     # Core classes
-    "MultiTurnReactAgent",
+    "WebResearcherAgent",        # Main agent class
+    "MultiTurnReactAgent",        # Backward compatibility alias
     "ResearchRound",
     "TestTimeScalingAgent",
+    "TOOL_MAP",
     
     # Base classes
     "Message",

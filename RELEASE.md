@@ -109,7 +109,7 @@ pip install webresearcher
 
 # Test it works
 webresearcher "Test question" --help
-python -c "from webresearcher import MultiTurnReactAgent; print('OK')"
+python -c "from webresearcher import WebResearcherAgent; print('OK')"
 
 # Cleanup
 deactivate

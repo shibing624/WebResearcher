@@ -15,7 +15,7 @@ from loguru import logger
 from dotenv import load_dotenv
 
 from webresearcher import __version__
-from webresearcher.react_agent import MultiTurnReactAgent
+from webresearcher.agent import WebResearcherAgent
 from webresearcher.tts_agent import TestTimeScalingAgent
 
 
@@ -67,7 +67,7 @@ async def run_research(args):
         answer = result['final_synthesized_answer']
     else:
         logger.info("Using single-agent mode")
-        agent = MultiTurnReactAgent(
+        agent = WebResearcherAgent(
             llm_config=llm_config,
             function_list=function_list,
         )

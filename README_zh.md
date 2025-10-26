@@ -120,7 +120,7 @@ webresearcher "刘翔破纪录时候是多少岁?"
 
 ```python
 import asyncio
-from webresearcher import MultiTurnReactAgent
+from webresearcher import WebResearcherAgent
 
 # 配置
 llm_config = {
@@ -129,7 +129,7 @@ llm_config = {
 }
 
 # 创建 Agent
-agent = MultiTurnReactAgent(
+agent = WebResearcherAgent(
     llm_config=llm_config,
     function_list=["search", "google_scholar", "PythonInterpreter"]
 )
@@ -164,8 +164,7 @@ result = await agent.run("复杂问题", num_parallel_agents=3)
 通过继承 `BaseTool` 创建您自己的工具：
 
 ```python
-from webresearcher import BaseTool, MultiTurnReactAgent
-from webresearcher.react_agent import TOOL_MAP
+from webresearcher import BaseTool, WebResearcherAgent, TOOL_MAP
 
 class MyCustomTool(BaseTool):
     name = "my_tool"
@@ -178,7 +177,7 @@ class MyCustomTool(BaseTool):
 
 # 注册并使用
 TOOL_MAP['my_tool'] = MyCustomTool()
-agent = MultiTurnReactAgent(llm_config, function_list=["my_tool", "search"])
+agent = WebResearcherAgent(llm_config, function_list=["my_tool", "search"])
 ```
 
 查看 [examples/custom_agent.py](./examples/custom_agent.py) 获取完整示例。
@@ -188,10 +187,10 @@ agent = MultiTurnReactAgent(llm_config, function_list=["my_tool", "search"])
 高效处理多个问题：
 
 ```python
-from webresearcher import MultiTurnReactAgent
+from webresearcher import WebResearcherAgent
 
 questions = ["问题 1", "问题 2", "问题 3"]
-agent = MultiTurnReactAgent(llm_config)
+agent = WebResearcherAgent(llm_config)
 
 for question in questions:
     result = await agent.run(question)
