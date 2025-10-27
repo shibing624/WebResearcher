@@ -1,125 +1,118 @@
-# WebResearcher: An Iterative Deep-Research Agent
+[**🇨🇳中文**](https://github.com/shibing624/webresearcher/blob/main/README.md) | [**🌐English**](https://github.com/shibing624/webresearcher/blob/main/README_EN.md) 
+
 
 <p align="center">
-  <img src="./docs/webresearcher.jpg" alt="WebResearcher Logo" width="30%"/>
-</p>
-
-<p align="center">
-  <strong>Unbounded Reasoning Through Iterative Synthesis</strong>
-</p>
-
-<p align="center">
-  <a href="https://pypi.org/project/webresearcher/"><img src="https://img.shields.io/pypi/v/webresearcher.svg" alt="PyPI version"></a>
-  <a href="https://pypi.org/project/webresearcher/"><img src="https://img.shields.io/pypi/pyversions/webresearcher.svg" alt="Python versions"></a>
-  <a href="https://github.com/shibing624/WebResearcher/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shibing624/WebResearcher.svg" alt="License"></a>
-  <a href="https://arxiv.org/abs/2509.13309"><img src="https://img.shields.io/badge/arXiv-2509.13309-b31b1b.svg" alt="arXiv"></a>
-  <a href="https://pepy.tech/project/webresearcher"><img src="https://static.pepy.tech/badge/webresearcher" alt="Downloads"></a>
-</p>
-
-<p align="center">
-  <a href="./README.md">English</a> | <a href="./README_zh.md">简体中文</a>
+  <img src="./docs/webresearcher.jpg" alt="WebResearcher Logo" height="150" alt="Logo"/>
 </p>
 
 ---
 
-## 🌟 Highlights
-
-- 🧠 **Iterative Deep-Research**: Novel paradigm that prevents context overflow through periodic synthesis
-- 🔄 **Unbounded Reasoning**: Practically unlimited research depth via evolving summary reports
-- 🛠️ **Rich Tool Ecosystem**: Web search, academic papers, code execution, file parsing
-- 🎯 **Production Ready**: Zero external agent framework dependencies, fully self-contained
-- ⚡ **High Performance**: Async-first design, smart token management, robust error handling
-- 🎨 **Easy to Use**: Simple CLI, clean Python API, extensive examples
-
-## 📖 Introduction
-
-**WebResearcher** is an autonomous research agent built on the **IterResearch paradigm**, designed to emulate expert-level research workflows. Unlike traditional agents that suffer from context overflow and noise accumulation, WebResearcher breaks research into discrete rounds with iterative synthesis.
-
-### The Problem with Traditional Agents
-
-Current open-source research agents rely on **mono-contextual, linear accumulation**:
-
-1. **🚫 Cognitive Workspace Suffocation**: Ever-expanding context constrains deep reasoning
-2. **🚫 Irreversible Noise Contamination**: Errors and irrelevant info accumulate
-3. **🚫 Lack of Synthesis**: No pausing to distill, re-evaluate, and plan strategically
-
-### The WebResearcher Solution
-
-WebResearcher implements the **IterResearch paradigm**, where each round involves a **single LLM call** that simultaneously generates:
-
-- **Think**: Internal reasoning and analysis
-- **Report**: Updated research summary synthesizing all findings so far
-- **Action**: Tool call or final answer
-
-This **one-step approach** (vs. traditional two-step "think→act→synthesize") delivers:
-- ⚡ **50% faster** - One LLM call per round instead of two
-- 💰 **40% cheaper** - Reduced token usage
-- 🧠 **Better reasoning** - Think, Report, and Action generated in unified context
-
-This enables **unbounded research depth** while maintaining a lean, focused cognitive workspace.
-
+# WebResearcher: An Iterative Deep-Research Agent
 <p align="center">
-  <img src="./docs/paradigm.png" alt="Paradigm Comparison" width="100%"/>
-  <br>
-  <em>Figure: Mono-contextual Paradigm (Top) vs. Iterative Deep-Research Paradigm (Bottom)</em>
+  <a href="https://pypi.org/project/webresearcher/"><img src="https://img.shields.io/pypi/v/webresearcher.svg" alt="PyPI version"></a>
+  <a href="https://pepy.tech/project/webresearcher"><img src="https://static.pepy.tech/badge/webresearcher" alt="Downloads"></a>
+  <a href="https://github.com/shibing624/WebResearcher/blob/main/LICENSE"><img src="https://img.shields.io/github/license/shibing624/WebResearcher.svg" alt="License"></a>
+  <a href="https://pypi.org/project/webresearcher/"><img src="https://img.shields.io/badge/Python-3.10%2B-green.svg" alt="Python versions"></a>
+  <a href="https://arxiv.org/abs/2509.13309"><img src="https://img.shields.io/badge/arXiv-2509.13309-b31b1b.svg" alt="arXiv"></a>
+  <a href="https://github.com/shibing624/WebResearcher"><img src="https://img.shields.io/badge/wechat-group-green.svg?logo=wechat" alt="Wechat Group"></a>
 </p>
 
-## 🏗️ Architecture
+- 🧠 **迭代深度研究**: 通过周期性综合防止上下文溢出的新型范式
+- 🔄 **无界推理**: 通过演化报告实现几乎无限的研究深度
+- 🛠️ **丰富工具生态**: 网页搜索、学术论文、代码执行、文件解析
+- 🎯 **生产就绪**: 零外部 Agent 框架依赖，完全自包含
+- ⚡ **高性能**: 异步优先设计，智能 Token 管理，强大的错误处理
+- 🎨 **易于使用**: 简洁的 CLI、清晰的 Python API、丰富的示例
 
-### Core Components
+## 📖 简介
 
-**IterResearch Paradigm - Single LLM Call Per Round:**
+**WebResearcher** 是迭代式深度研究智能体，基于 **IterResearch 范式**构建的自主研究智能体，旨在模拟专家级别的研究工作流。与遭受上下文溢出和噪音累积困扰的传统 Agent 不同，WebResearcher 将研究分解为离散的轮次，并进行迭代综合。
+
+### 传统 Agent 的问题
+
+当前的开源研究 Agent 依赖于**单上下文、线性累积**模式：
+
+1. **🚫 认知工作空间窒息**: 不断膨胀的上下文限制了深度推理能力
+2. **🚫 不可逆的噪音污染**: 错误和无关信息不断累积
+3. **🚫 缺乏周期性综合**: 无法暂停以提炼、重新评估和战略性规划
+
+### WebResearcher 的解决方案
+
+WebResearcher 实现了 **IterResearch 范式**，每轮通过**单次 LLM 调用**同时生成：
+
+- **Think（思考）**: 内部推理和分析
+- **Report（报告）**: 综合所有发现的更新研究摘要
+- **Action（行动）**: 工具调用或最终答案
+
+这种**一步式方法**（相比传统的两步式"思考→行动→综合"）带来了：
+- ⚡ **速度提升 50%** - 每轮只需一次 LLM 调用而非两次
+- 💰 **成本降低 40%** - 减少 Token 使用量
+- 🧠 **推理更优** - Think、Report 和 Action 在统一上下文中生成
+
+这实现了**无界的研究深度**，同时保持精简、聚焦的认知工作空间。
+
+<p align="center">
+  <img src="./docs/paradigm.png" alt="范式对比" width="100%"/>
+  <br>
+  <em>图：单上下文范式（上）vs. 迭代深度研究范式（下）</em>
+</p>
+
+## 🏗️ 架构
+
+### 核心组件
+
+**IterResearch 范式 - 每轮单次 LLM 调用：**
 
 ```python
-Round i:
+第 i 轮:
 ┌─────────────────────────────────────────────────────────┐
-│  Workspace State: (Question, Report_{i-1}, Result_{i-1}) │
+│  工作空间状态: (问题, 报告_{i-1}, 结果_{i-1})              │
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
-│  Single LLM Call → Generates All Three:                  │
-│  ├─ <think>: Analyze current state                       │
-│  ├─ <report>: Updated synthesis of all findings          │
-│  └─ <tool_call> or <answer>: Next action                 │
+│  单次 LLM 调用 → 同时生成三部分：                          │
+│  ├─ <think>: 分析当前状态                                │
+│  ├─ <report>: 综合所有发现的更新报告                      │
+│  └─ <tool_call> 或 <answer>: 下一步行动                  │
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
-│  If <tool_call>: Execute Tool                            │
-│  If <answer>: Return Final Answer                        │
+│  如果是 <tool_call>: 执行工具                             │
+│  如果是 <answer>: 返回最终答案                            │
 └─────────────────────────────────────────────────────────┘
                           ↓
-        Next Round with Updated Report and Tool Result
+           使用更新后的报告和工具结果进入下一轮
 ```
 
-**Key Advantage**: Report is synthesized *before* deciding the next action, ensuring coherent reasoning in a unified context.
+**核心优势**: 报告在决定下一步行动*之前*就已完成综合，确保在统一上下文中进行连贯推理。
 
-### Available Tools
+### 可用工具
 
-| Tool | Description | Use Case |
-|------|-------------|----------|
-| `search` | Google Search via Serper API | General web information |
-| `google_scholar` | Academic paper search | Scientific research |
-| `visit` | Webpage content extraction | Deep content analysis |
-| `PythonInterpreter` | Sandboxed code execution | Data analysis, calculations |
-| `parse_file` | Multi-format file parser | Document processing |
+| 工具 | 描述 | 使用场景 |
+|------|------|----------|
+| `search` | 通过 Serper API 的 Google 搜索 | 通用网页信息 |
+| `google_scholar` | 学术论文搜索 | 科研文献查询 |
+| `visit` | 网页内容提取 | 深度内容分析 |
+| `PythonInterpreter` | 沙盒代码执行 | 数据分析、计算 |
+| `parse_file` | 多格式文件解析器 | 文档处理 |
 
-## 🚀 Quick Start
+## 🚀 快速开始
 
-### Installation
+### 安装
 
 ```bash
 pip install webresearcher
 ```
 
-### Basic Usage
+### 基础使用
 
 ```bash
-# Set your API keys
+# 设置 API 密钥
 export OPENAI_API_KEY="your_key"
 export SERPER_API_KEY="your_key"
 
-# Run a research query
-webresearcher "Who won the Nobel Prize in Physics in 2024?"
+# 运行研究查询
+webresearcher "刘翔破纪录时候是多少岁?"
 ```
 
 ### Python API
@@ -128,74 +121,74 @@ webresearcher "Who won the Nobel Prize in Physics in 2024?"
 import asyncio
 from webresearcher import WebResearcherAgent
 
-# Configure
+# 配置
 llm_config = {
     "model": "gpt-4o",
     "generate_cfg": {"temperature": 0.6}
 }
 
-# Create agent
+# 创建 Agent
 agent = WebResearcherAgent(
     llm_config=llm_config,
     function_list=["search", "google_scholar", "PythonInterpreter"]
 )
 
-# Research
+# 开始研究
 async def main():
-    result = await agent.run("Your research question")
+    result = await agent.run("您的研究问题")
     print(result['prediction'])
 
 asyncio.run(main())
 ```
 
-## 📚 Advanced Usage
+## 📚 高级用法
 
-### Test-Time Scaling (TTS)
+### 测试时扩展 (TTS)
 
-For critical questions requiring maximum accuracy, use TTS mode (3-5x cost):
+对于需要最高准确性的关键问题，使用 TTS 模式（3-5倍成本）：
 
 ```bash
-webresearcher "Complex question" --use-tts --num-agents 3
+webresearcher "复杂问题" --use-tts --num-agents 3
 ```
 
 ```python
 from webresearcher import TestTimeScalingAgent
 
 agent = TestTimeScalingAgent(llm_config, function_list)
-result = await agent.run("Complex question", num_parallel_agents=3)
+result = await agent.run("复杂问题", num_parallel_agents=3)
 ```
 
-### Custom Tools
+### 自定义工具
 
-Create your own tools by extending `BaseTool`:
+通过继承 `BaseTool` 创建您自己的工具：
 
 ```python
 from webresearcher import BaseTool, WebResearcherAgent, TOOL_MAP
 
 class MyCustomTool(BaseTool):
     name = "my_tool"
-    description = "What my tool does"
+    description = "工具功能描述"
     parameters = {"type": "object", "properties": {...}}
     
     def call(self, params, **kwargs):
-        # Your tool logic
-        return "result"
+        # 您的工具逻辑
+        return "结果"
 
-# Register and use
+# 注册并使用
 TOOL_MAP['my_tool'] = MyCustomTool()
 agent = WebResearcherAgent(llm_config, function_list=["my_tool", "search"])
 ```
 
-See [examples/custom_agent.py](./examples/custom_agent.py) for full examples.
+查看 [examples/custom_agent.py](./examples/custom_agent.py) 获取完整示例。
 
-### Batch Processing
+### 批量处理
 
-Process multiple questions efficiently:
+高效处理多个问题：
 
 ```python
 from webresearcher import WebResearcherAgent
 
-questions = ["Question 1", "Question 2", "Question 3"]
+questions = ["问题 1", "问题 2", "问题 3"]
 agent = WebResearcherAgent(llm_config)
 
 for question in questions:
@@ -203,200 +196,201 @@ for question in questions:
     print(f"Q: {question}\nA: {result['prediction']}\n")
 ```
 
-See [examples/batch_research.py](./examples/batch_research.py) for advanced batch processing.
+查看 [examples/batch_research.py](./examples/batch_research.py) 获取高级批量处理示例。
 
-### Python Interpreter Configuration
+### Python 解释器配置
 
-The `PythonInterpreter` tool supports two execution modes:
+`PythonInterpreter` 工具支持两种执行模式：
 
-**1. Sandbox Mode (Recommended for Production):**
+**1. 沙箱模式（生产环境推荐）：**
 ```bash
-# Configure sandbox endpoints
+# 配置沙箱端点
 export SANDBOX_FUSION_ENDPOINTS="http://your-sandbox-endpoint.com"
 ```
 
-**2. Local Mode (Automatic Fallback):**
-- When `SANDBOX_FUSION_ENDPOINTS` is not configured, code executes locally
-- Useful for development and testing
-- ⚠️ **Warning**: Local execution runs code in the current Python environment
+**2. 本地模式（自动降级）：**
+- 当未配置 `SANDBOX_FUSION_ENDPOINTS` 时，代码在本地执行
+- 适用于开发和测试
+- ⚠️ **警告**：本地执行会在当前 Python 环境中运行代码
 
 ```python
 from webresearcher import PythonInterpreter
 
-# Will use sandbox if configured, otherwise falls back to local execution
+# 如果配置了沙箱则使用沙箱，否则降级到本地执行
 interpreter = PythonInterpreter()
 result = interpreter.call({'code': 'print("Hello, World!")'})
 ```
 
-See [examples/python_interpreter_example.py](./examples/python_interpreter_example.py) for more examples.
+详细示例请参考 [examples/python_interpreter_example.py](./examples/python_interpreter_example.py)。
 
-### Logging Management
+### 日志管理
 
-WebResearcher provides unified logging control for the entire package. You can control log levels via environment variables or programmatically:
+WebResearcher 提供了统一的日志管理系统，可以通过环境变量或编程方式控制日志级别：
 
-**Via Environment Variable:**
+**通过环境变量：**
 
 ```bash
-# Set log level before running
-export WEBRESEARCHER_LOG_LEVEL=DEBUG  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
-webresearcher "Your question"
+# 运行前设置日志级别
+export WEBRESEARCHER_LOG_LEVEL=DEBUG  # 选项：DEBUG, INFO, WARNING, ERROR, CRITICAL
+webresearcher "你的问题"
 ```
 
-**Programmatically:**
+**编程方式：**
 
 ```python
 from webresearcher import set_log_level, add_file_logger
 
-# Set console log level
-set_log_level("WARNING")  # Only show warnings and errors
+# 设置控制台日志级别
+set_log_level("WARNING")  # 只显示警告和错误
 
-# Add file logging with rotation
+# 添加文件日志，支持自动轮转
 add_file_logger("research.log", level="DEBUG")
 
-# Now run your research
+# 现在执行研究
 agent = WebResearcherAgent(llm_config)
-result = await agent.run("Your question")
+result = await agent.run("你的问题")
 ```
 
-**File Logging Features:**
-- Automatic rotation when file size exceeds 10MB
-- Keeps logs for 7 days
-- Compresses old logs to .zip format
+**文件日志功能：**
+- 文件大小超过 10MB 时自动轮转
+- 保留最近 7 天的日志
+- 自动压缩旧日志为 .zip 格式
 
-See [examples/logging_example.py](./examples/logging_example.py) and [docs/logging_guide.md](./docs/logging_guide.md) for detailed usage.
+详细使用方法请参考 [examples/logging_example.py](./examples/logging_example.py) 和 [docs/logging_guide.md](./docs/logging_guide.md)。
 
-## 🎯 Features
+## 🎯 功能特性
 
-### Core Features
+### 核心特性
 
-- ✅ **Iterative Synthesis**: Prevents context overflow through periodic report updates
-- ✅ **Unbounded Depth**: Practically unlimited research rounds
-- ✅ **Smart Token Management**: Automatic context pruning and compression
-- ✅ **Robust Error Handling**: Retry logic, fallback strategies, forced answer generation
-- ✅ **Async/Await**: Non-blocking I/O for performance
-- ✅ **Type Safe**: Full type hints throughout
+- ✅ **迭代综合**: 通过周期性报告更新防止上下文溢出
+- ✅ **无界深度**: 几乎无限的研究轮次
+- ✅ **智能 Token 管理**: 自动上下文修剪和压缩
+- ✅ **强大的错误处理**: 重试逻辑、回退策略、强制答案生成
+- ✅ **异步支持**: 非阻塞 I/O 提升性能
+- ✅ **类型安全**: 全面的类型提示
 
-### Tool Features
+### 工具特性
 
-- ✅ **Web Search**: Google Search integration via Serper
-- ✅ **Academic Search**: Google Scholar for research papers
-- ✅ **Web Scraping**: Intelligent content extraction from URLs
-- ✅ **Code Execution**: Sandboxed Python interpreter
-- ✅ **File Processing**: PDF, DOCX, CSV, Excel, and more
-- ✅ **Extensible**: Easy custom tool creation
+- ✅ **网页搜索**: 通过 Serper 集成 Google 搜索
+- ✅ **学术搜索**: Google Scholar 查询研究论文
+- ✅ **网页抓取**: 智能内容提取
+- ✅ **代码执行**: 沙盒 Python 解释器
+- ✅ **文件处理**: 支持 PDF、DOCX、CSV、Excel 等
+- ✅ **可扩展**: 轻松创建自定义工具
 
-### Production Features
+### 生产特性
 
-- ✅ **Zero Framework Lock-in**: No qwen-agent or similar dependencies
-- ✅ **Lightweight**: Only 59KB wheel package
-- ✅ **Well Documented**: Comprehensive docstrings and examples
-- ✅ **CLI + API**: Use from command line or Python
-- ✅ **Configurable**: Extensive configuration options
-- ✅ **Logging**: Rich logging with loguru
+- ✅ **零框架锁定**: 无 qwen-agent 等类似依赖
+- ✅ **轻量级**: 仅 59KB wheel 包
+- ✅ **文档完善**: 全面的文档字符串和示例
+- ✅ **CLI + API**: 支持命令行和 Python 调用
+- ✅ **可配置**: 丰富的配置选项
+- ✅ **日志记录**: 使用 loguru 的丰富日志
 
-## 📊 Performance
+## 📊 性能表现
 
-Based on the paper's evaluation:
+基于论文的评估结果：
 
-- **HotpotQA**: Superior performance on multi-hop reasoning
-- **Bamboogle**: Excellent on complex factual questions
-- **Context Management**: Maintains lean workspace even after 50+ rounds
-- **Accuracy**: Competitive with or exceeds baseline agents
+- **HotpotQA**: 在多跳推理任务上表现优异
+- **Bamboogle**: 在复杂事实问题上表现出色
+- **上下文管理**: 即使 50+ 轮后仍保持精简的工作空间
+- **准确性**: 与基线 Agent 相当或超越
 
 <p align="center">
-  <img src="./docs/performance.png" alt="Performance" width="80%"/>
+  <img src="./docs/performance.png" alt="性能表现" width="80%"/>
 </p>
 
-## 🔧 Configuration
+## 🔧 配置
 
-### Environment Variables
+### 环境变量
 
 ```bash
-# Required
-OPENAI_API_KEY=...              # OpenAI API key
-SERPER_API_KEY=...                 # Serper API for Google Search
+# 必需
+OPENAI_API_KEY=sk-...              # OpenAI API 密钥
+SERPER_API_KEY=...                 # Serper API（Google 搜索）
 
-# Optional
-OPENAI_BASE_URL=https://...        # Custom OpenAI endpoint
-JINA_API_KEY=...                   # Jina AI for web scraping
-SANDBOX_FUSION_ENDPOINTS=...       # Code execution sandbox
-MAX_LLM_CALL_PER_RUN=50           # Max iterations per research
-FILE_DIR=./files                   # File storage directory
+# 可选
+OPENAI_BASE_URL=https://...        # 自定义 OpenAI 端点
+JINA_API_KEY=...                   # Jina AI（网页抓取）
+SANDBOX_FUSION_ENDPOINTS=...       # 代码执行沙盒
+MAX_LLM_CALL_PER_RUN=50           # 每次研究的最大迭代次数
+FILE_DIR=./files                   # 文件存储目录
 ```
 
-### LLM Configuration
+### LLM 配置
 
 ```python
 llm_config = {
-    "model": "gpt-4o",              # Or: o3-mini, gpt-4-turbo, etc.
+    "model": "gpt-4o",              # 或: o3-mini, gpt-4-turbo 等
     "generate_cfg": {
-        "temperature": 0.6,          # Sampling temperature (0.0-2.0)
-        "top_p": 0.95,              # Nucleus sampling
-        "presence_penalty": 1.1,     # Repetition penalty
+        "temperature": 0.6,          # 采样温度 (0.0-2.0)
+        "top_p": 0.95,              # 核采样
+        "presence_penalty": 1.1,     # 重复惩罚
         "model_thinking_type": "enabled"  # enabled|disabled|auto
     },
-    "max_input_tokens": 32000,      # Context window limit
-    "llm_timeout": 300.0,           # LLM API timeout (seconds)
-    "agent_timeout": 600.0,         # Total agent timeout (seconds)
+    "max_input_tokens": 32000,      # 上下文窗口限制
+    "llm_timeout": 300.0,           # LLM API 超时（秒）
+    "agent_timeout": 600.0,         # Agent 总超时（秒）
 }
 ```
 
-## 📝 Examples
+## 📝 示例
 
-See the [examples/](./examples/) directory for complete examples:
+查看 [examples/](./examples/) 目录获取完整示例：
 
-- **[basic_usage.py](./examples/basic_usage.py)** - Getting started with WebResearcher
-- **[batch_research.py](./examples/batch_research.py)** - Processing multiple questions
-- **[custom_agent.py](./examples/custom_agent.py)** - Creating custom tools
+- **[basic_usage.py](./examples/basic_usage.py)** - WebResearcher 入门
+- **[batch_research.py](./examples/batch_research.py)** - 批量处理多个问题
+- **[custom_agent.py](./examples/custom_agent.py)** - 创建自定义工具
 
-## 🧪 Testing
+## 🧪 测试
 
 ```bash
-# Install dev dependencies
+# 安装开发依赖
 pip install -e ".[dev]"
 
-# Run tests
+# 运行测试
 pytest
 
-# Run with coverage
+# 运行覆盖率测试
 pytest --cov=webresearcher
 ```
 
-## 📚 Documentation
+## 📚 文档
 
-- [Examples](./examples/) - Usage examples and tutorials
-- [CHANGELOG](./CHANGELOG.md) - Version history and updates
-- [CONTRIBUTING](./CONTRIBUTING.md) - Contribution guidelines
-- [RELEASE](./RELEASE.md) - Release process for maintainers
+- [示例代码](./examples/) - 使用示例和教程
+- [更新日志](./CHANGELOG.md) - 版本历史和更新
+- [贡献指南](./CONTRIBUTING.md) - 如何贡献代码
+- [发布指南](./RELEASE.md) - 维护者发布流程
 
-## 🤝 Contributing
+## 🤝 参与贡献
 
-We welcome contributions! Ways to contribute:
+我们欢迎各种形式的贡献！
 
-- 🐛 Report bugs
-- 💡 Suggest features
-- 📝 Improve documentation
-- 🔧 Submit pull requests
+贡献方式：
+- 🐛 报告 Bug
+- 💡 提出新功能建议
+- 📝 改进文档
+- 🔧 提交 Pull Request
 
-Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
+详细指南请查看 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-## 📧 Contact
+## 📧 联系方式
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/shibing624/WebResearcher/issues)
-- **Email**: xuming624@qq.com
-- **WeChat**: xuming624 (Note: Name-Company-NLP)
+- **GitHub Issues**: [报告问题或功能请求](https://github.com/shibing624/WebResearcher/issues)
+- **邮箱**: xuming624@qq.com
+- **微信**: xuming624（备注：姓名-公司-NLP）
 
 <p align="center">
   <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/wechat.jpeg" width="200" />
 </p>
 
-## 🌟 Star History
+## 🌟 Star 历史
 
 [![Star History Chart](https://api.star-history.com/svg?repos=shibing624/WebResearcher&type=Date)](https://star-history.com/#shibing624/WebResearcher&Date)
 
-## 📑 Citation
+## 📑 引用
 
-If you use WebResearcher in your research, please cite:
+如果您在研究中使用了 WebResearcher，请引用：
 
 ```bibtex
 @misc{qiao2025webresearcher,
@@ -410,21 +404,22 @@ If you use WebResearcher in your research, please cite:
 }
 ```
 
-## 📄 License
+## 📄 许可证
 
-This project is licensed under the [Apache License 2.0](./LICENSE) - free for commercial use.
+本项目采用 [Apache License 2.0](./LICENSE) 许可证 - 可免费用于商业用途。
 
-## 🙏 Acknowledgements
+## 🙏 致谢
 
-This project is inspired by and built upon the research from:
+本项目受以下研究启发并在此基础上构建：
 
-- **[WebResearcher Paper](https://arxiv.org/abs/2509.13309)** by Qiao et al.
-- **[Alibaba-NLP/DeepResearch](https://github.com/Alibaba-NLP/DeepResearch)** - Original research implementation
+- **[WebResearcher 论文](https://arxiv.org/abs/2509.13309)** by Qiao et al.
+- **[Alibaba-NLP/DeepResearch](https://github.com/Alibaba-NLP/DeepResearch)** - 原始研究实现
 
-Special thanks to the authors for their groundbreaking work on iterative research paradigms!
+特别感谢论文作者在迭代研究范式上的开创性工作！
 
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/shibing624">shibing624</a>
+  用 ❤️ 制作 by <a href="https://github.com/shibing624">shibing624</a>
 </p>
+
