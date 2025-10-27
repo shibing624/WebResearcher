@@ -1,17 +1,17 @@
+from typing import Dict, List, Optional, Union
 import re
 import sys
 import io
 import traceback
-from typing import Dict, List, Optional, Union
 import json5
-from sandbox_fusion import run_code, RunCodeRequest, RunStatus
-from requests.exceptions import Timeout
 import os
 import random
 import time
+from sandbox_fusion import run_code, RunCodeRequest
+from requests.exceptions import Timeout
+
 from webresearcher.base import BaseToolWithFileAccess, extract_code
 from webresearcher.logger import logger
-
 
 SANDBOX_FUSION_ENDPOINTS = os.environ.get('SANDBOX_FUSION_ENDPOINTS', '').split(',')
 
@@ -39,7 +39,7 @@ class PythonInterpreter(BaseToolWithFileAccess):
         "required": ["code"],
     }
 
-    def __init__(self, 
+    def __init__(self,
                  cfg: Optional[Dict] = None,
                  base_dir: Optional[str] = None,
                  safe_globals: Optional[dict] = None,
@@ -72,7 +72,7 @@ class PythonInterpreter(BaseToolWithFileAccess):
         old_stdout = sys.stdout
         new_stdout = io.StringIO()
         sys.stdout = new_stdout
-        
+
         try:
             # Compile the code to check for syntax errors
             code = compile(python_code, '<string>', 'exec')

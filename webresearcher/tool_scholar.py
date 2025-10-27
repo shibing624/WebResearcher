@@ -1,13 +1,12 @@
+from typing import Union, List, Optional, Dict, Any
 import os
 import json
-from typing import Union, List, Optional, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 import http.client
 from contextlib import contextmanager
 
 from webresearcher.logger import logger
 from webresearcher.base import BaseTool
-
 
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY')
 
@@ -37,31 +36,32 @@ class Scholar(BaseTool):
         finally:
             conn.close()
 
-    def _make_request(self, conn: http.client.HTTPSConnection, query: str, max_retries: int = 3) -> Optional[Dict[str, Any]]:
+    def _make_request(self, conn: http.client.HTTPSConnection, query: str, max_retries: int = 3) -> Optional[
+        Dict[str, Any]]:
         """发送请求并处理重试逻辑"""
         payload = json.dumps({"q": query})
         headers = {
             'X-API-KEY': SERPER_API_KEY,
             'Content-Type': 'application/json'
         }
-        
+
         for attempt in range(max_retries):
             try:
                 conn.request("POST", "/scholar", payload, headers)
                 response = conn.getresponse()
-                
+
                 if response.status == 200:
                     data = response.read()
                     return json.loads(data.decode("utf-8"))
                 else:
                     logger.warning(f"HTTP {response.status} for query '{query}', attempt {attempt + 1}")
-                    
+
             except (http.client.HTTPException, ConnectionError, json.JSONDecodeError) as e:
                 logger.warning(f"Request failed for query '{query}', attempt {attempt + 1}: {e}")
-                
+
             except Exception as e:
                 logger.error(f"Unexpected error for query '{query}', attempt {attempt + 1}: {e}")
-        
+
         return None
 
     def _format_result_item(self, page: Dict[str, Any], idx: int) -> str:
@@ -73,16 +73,16 @@ class Scholar(BaseTool):
         snippet = page.get('snippet', '')
         cited_by = page.get('citedBy', '')
         pdf_url = page.get('pdfUrl', '')
-        
+
         # 构建格式化字符串
         result_parts = [f"{idx}. [{title}]"]
-        
+
         # 添加链接信息
         if pdf_url:
             result_parts[0] += f"({pdf_url})"
         else:
             result_parts[0] += "(no available link)"
-        
+
         # 添加其他信息
         if publication_info:
             result_parts.append(f"Publication: {publication_info}")
@@ -95,41 +95,41 @@ class Scholar(BaseTool):
             clean_snippet = snippet.replace("Your browser can't play this video.", "").strip()
             if clean_snippet:
                 result_parts.append(clean_snippet)
-        
+
         return "\n".join(result_parts)
 
     def google_scholar_with_serp(self, query: str) -> str:
         """使用Serper API搜索Google Scholar"""
         if not SERPER_API_KEY:
             return "Error: SERPER_API_KEY environment variable is not set."
-        
+
         if not query or not query.strip():
             return "Error: Query cannot be empty."
-        
+
         query = query.strip()
         logger.debug(f"Searching Google Scholar for: '{query}'")
-        
+
         try:
             with self._get_connection() as conn:
                 results = self._make_request(conn, query)
-                
+
                 if not results:
                     return f"Google Scholar search failed for query: '{query}'. Please try again later."
-                
+
                 if "organic" not in results or not results["organic"]:
                     return f"No results found for query: '{query}'. Try using a more general query."
-                
+
                 # 格式化结果
                 formatted_results = []
                 for idx, page in enumerate(results["organic"], 1):
                     formatted_result = self._format_result_item(page, idx)
                     formatted_results.append(formatted_result)
-                
+
                 result_count = len(formatted_results)
                 header = f"Google Scholar search for '{query}' found {result_count} results:\n\n## Scholar Results\n"
-                
+
                 return header + "\n\n".join(formatted_results)
-                
+
         except Exception as e:
             logger.error(f"Unexpected error during Google Scholar search for '{query}': {e}")
             return f"An error occurred while searching for '{query}'. Please try again."
