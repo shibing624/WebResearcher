@@ -7,3 +7,5 @@ json5
 pandas
 tabulate
 pillow
+sandbox-fusion
+python-dotenv

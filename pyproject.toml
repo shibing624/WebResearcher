@@ -39,6 +39,8 @@ dependencies = [
     "pandas",
     "tabulate",
     "pillow",
+    "sandbox-fusion",
+    "python-dotenv",
 ]
 
 [project.optional-dependencies]
@@ -52,9 +54,6 @@ dev = [
 video = [
     "opencv-python",
     "moviepy",
-]
-sandbox = [
-    "sandbox-fusion",
 ]
 
 [project.urls]
