@@ -354,13 +354,6 @@ pytest
 pytest --cov=webresearcher
 ```
 
-## 📚 Documentation
-
-- [Examples](./examples/) - Usage examples and tutorials
-- [CHANGELOG](./CHANGELOG.md) - Version history and updates
-- [CONTRIBUTING](./CONTRIBUTING.md) - Contribution guidelines
-- [RELEASE](./RELEASE.md) - Release process for maintainers
-
 ## 🤝 Contributing
 
 We welcome contributions! Ways to contribute:

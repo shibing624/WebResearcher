@@ -355,13 +355,6 @@ pytest
 pytest --cov=webresearcher
 ```
 
-## 📚 文档
-
-- [示例代码](./examples/) - 使用示例和教程
-- [更新日志](./CHANGELOG.md) - 版本历史和更新
-- [贡献指南](./CONTRIBUTING.md) - 如何贡献代码
-- [发布指南](./RELEASE.md) - 维护者发布流程
-
 ## 🤝 参与贡献
 
 我们欢迎各种形式的贡献！
