@@ -52,7 +52,7 @@ WebResearcher 实现了 **IterResearch 范式**，每轮通过**单次 LLM 调�
 这实现了**无界的研究深度**，同时保持精简、聚焦的认知工作空间。
 
 <p align="center">
-  <img src="./docs/paradigm.png" alt="范式对比" width="100%"/>
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/iterresearch.png" alt="范式对比" width="100%"/>
   <br>
   <em>图：单上下文范式（上）vs. 迭代深度研究范式（下）</em>
 </p>
@@ -256,7 +256,7 @@ result = await agent.run("你的问题")
 - 保留最近 7 天的日志
 - 自动压缩旧日志为 .zip 格式
 
-详细使用方法请参考 [examples/logging_example.py](./examples/logging_example.py) 和 [docs/logging_guide.md](./docs/logging_guide.md)。
+详细使用方法请参考 [logger.py](https://github.com/shibing624/WebResearcher/blob/main/webresearcher/logger.py)。
 
 ## 🎯 功能特性
 
@@ -297,7 +297,7 @@ result = await agent.run("你的问题")
 - **准确性**: 与基线 Agent 相当或超越
 
 <p align="center">
-  <img src="./docs/performance.png" alt="性能表现" width="80%"/>
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/performance.png" alt="性能表现" width="90%"/>
 </p>
 
 ## 🔧 配置
@@ -409,10 +409,4 @@ pytest --cov=webresearcher
 - **[Alibaba-NLP/DeepResearch](https://github.com/Alibaba-NLP/DeepResearch)** - 原始研究实现
 
 特别感谢论文作者在迭代研究范式上的开创性工作！
-
----
-
-<p align="center">
-  用 ❤️ 制作 by <a href="https://github.com/shibing624">shibing624</a>
-</p>
 

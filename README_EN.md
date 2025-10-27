@@ -51,7 +51,7 @@ This **one-step approach** (vs. traditional two-step "think→act→synthesize")
 This enables **unbounded research depth** while maintaining a lean, focused cognitive workspace.
 
 <p align="center">
-  <img src="./docs/paradigm.png" alt="Paradigm Comparison" width="100%"/>
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/iterresearch.png" alt="Paradigm Comparison" width="100%"/>
   <br>
   <em>Figure: Mono-contextual Paradigm (Top) vs. Iterative Deep-Research Paradigm (Bottom)</em>
 </p>
@@ -255,7 +255,7 @@ result = await agent.run("Your question")
 - Keeps logs for 7 days
 - Compresses old logs to .zip format
 
-See [examples/logging_example.py](./examples/logging_example.py) and [docs/logging_guide.md](./docs/logging_guide.md) for detailed usage.
+See  [logger.py](https://github.com/shibing624/WebResearcher/blob/main/webresearcher/logger.py) for detailed usage.
 
 ## 🎯 Features
 
@@ -296,7 +296,7 @@ Based on the paper's evaluation:
 - **Accuracy**: Competitive with or exceeds baseline agents
 
 <p align="center">
-  <img src="./docs/performance.png" alt="Performance" width="80%"/>
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/performance.png" alt="Performance" width="90%"/>
 </p>
 
 ## 🔧 Configuration
@@ -407,9 +407,3 @@ This project is inspired by and built upon the research from:
 - **[Alibaba-NLP/DeepResearch](https://github.com/Alibaba-NLP/DeepResearch)** - Original research implementation
 
 Special thanks to the authors for their groundbreaking work on iterative research paradigms!
-
----
-
-<p align="center">
-  Made with ❤️ by <a href="https://github.com/shibing624">shibing624</a>
-</p>

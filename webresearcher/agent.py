@@ -53,10 +53,10 @@ class ResearchRound:
 
     def __init__(self, question: str):
         self.question = question
-        
+
         # R_{i-1}: 上一轮生成的报告，初始为空
         self.current_report = "This is the first round. The report is empty."
-        
+
         # O_{i-1}: 上一轮工具调用的结果，初始为空
         self.last_observation = "This is the first round. No tool has been called yet."
 
@@ -70,7 +70,7 @@ class ResearchRound:
             f"**Current Report (R_{{i-1}}):**\n{self.current_report}\n\n"
             f"**Last Observation (O_{{i-1}}):**\n{self.last_observation}"
         )
-        
+
         return [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content}
@@ -89,7 +89,7 @@ class WebResearcherAgent:
     
     This agent is fully independent and does not inherit from external frameworks.
     """
-    
+
     def __init__(
             self,
             llm_config: Optional[Dict] = None,
@@ -100,7 +100,6 @@ class WebResearcherAgent:
         self.max_input_tokens = llm_config.get("max_input_tokens", 32000)
         self.llm_timeout = llm_config.get("llm_timeout", 300.0)
         self.agent_timeout = llm_config.get("agent_timeout", 600.0)
-        self.model_thinking_type = llm_config.get("model_thinking_type", "disabled")
         self.function_list = function_list or list(TOOL_MAP.keys())
 
     def parse_output(self, text: str) -> Dict[str, str]:
@@ -173,10 +172,11 @@ class WebResearcherAgent:
                     "max_tokens": 10000,
                     "presence_penalty": self.llm_generate_cfg.get('presence_penalty', 1.1)
                 }
-                if self.model_thinking_type != "disabled":
+                model_thinking_type = self.llm_generate_cfg.get("model_thinking_type", "")
+                if model_thinking_type:
                     request_params["extra_body"] = {
                         "thinking": {
-                            "type": self.model_thinking_type,
+                            "type": model_thinking_type,
                         }
                     }
                 # [关键] 使用 run_in_executor 在线程池中运行同步的 blocking I/O
@@ -198,7 +198,8 @@ class WebResearcherAgent:
                     logger.warning(f"Attempt {attempt + 1}: Empty response received.")
 
             except (APIError, APIConnectionError, APITimeoutError) as e:
-                logger.warning(f"Attempt {attempt + 1} API error: {e}, base_url: {OPENAI_BASE_URL}, api_key: {OPENAI_API_KEY}, model: {self.model}")
+                logger.warning(
+                    f"Attempt {attempt + 1} API error: {e}, base_url: {OPENAI_BASE_URL}, api_key: {OPENAI_API_KEY}, model: {self.model}")
             except Exception as e:
                 logger.error(f"Attempt {attempt + 1} unexpected error: {e}")
 
@@ -223,7 +224,7 @@ class WebResearcherAgent:
                     full_message.append(x)
                 else:
                     full_message.append(x)
-            
+
             full_prompt = build_text_completion_prompt(full_message, allow_special=True)
             return count_tokens_base(full_prompt, model)
         except Exception as e:
@@ -312,15 +313,16 @@ class WebResearcherAgent:
 
             # 2. 构建提示 (s_t = Q, R_{i-1}, O_{i-1})
             current_context = research_round.get_context(system_prompt)
-            
+
             if round_num == 1:
                 full_trajectory_log.extend(current_context)  # 仅记录初始上下文
 
             # 3. 单次 LLM 调用 (生成 T_i, R_i, A_i)
+            content = ''
             try:
                 logger.debug(f"Round {round_num}: Calling LLM. Remaining calls: {num_llm_calls_available}")
                 content = await self.call_server(current_context)
-                
+
                 full_trajectory_log.append({"role": "assistant", "content": content})
                 logger.debug(f'Round {round_num} LLM response received.')
 
@@ -348,7 +350,7 @@ class WebResearcherAgent:
             logger.debug(f"Round {round_num} - Answer: {answer_content}")
 
             # 5. 状态更新 (s_t -> s_{t+1})
-            
+
             # 5.1 更新报告 (R_i)
             # 无论 LLM 接下来是调用工具还是回答，它都必须生成一份新报告。
             # 这份新报告 R_i 将用于 s_{t+1}
@@ -370,14 +372,14 @@ class WebResearcherAgent:
                 try:
                     logger.debug(f"Round {round_num}: Executing tool...")
                     tool_response_str = await self.custom_call_tool(action_content)
-                    
+
                     # 将工具响应 O_i 存储，用于下一轮 s_{t+1}
                     research_round.last_observation = tool_response_str
 
                     # 记录工具响应到完整日志
                     tool_obs_msg = f"{OBS_START}\n{tool_response_str}\n{OBS_END}"
                     full_trajectory_log.append({"role": "user", "content": tool_obs_msg})
-                    
+
                     logger.debug(f"Round {round_num}: Tool execution completed.")
 
                 except Exception as e:
@@ -388,7 +390,7 @@ class WebResearcherAgent:
             else:
                 # LLM 既没有回答也没有调用工具
                 logger.warning("LLM did not produce <answer> or <tool_call>. Forcing answer generation...")
-                
+
                 # 强制生成答案
                 force_answer_msgs = current_context + [
                     {"role": "user", "content": (
@@ -398,11 +400,11 @@ class WebResearcherAgent:
                         "Use the three-part format: <think>...</think> <report>...</report> <answer>...</answer>"
                     )}
                 ]
-                
+
                 try:
                     forced_content = await self.call_server(force_answer_msgs)
                     forced_parsed = self.parse_output(forced_content)
-                    
+
                     if forced_parsed["answer"]:
                         prediction = forced_parsed["answer"]
                         termination = "answer (forced)"
