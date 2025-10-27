@@ -5,7 +5,6 @@ Tests for base module
 import pytest
 from webresearcher.base import (
     Message,
-    MessageRole,
     BaseTool,
     count_tokens,
     extract_code,

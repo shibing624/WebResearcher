@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-from webresearcher.logger import logger
+from webresearcher.log import logger
 from webresearcher.agent import WebResearcherAgent
 from webresearcher.tts_agent import TestTimeScalingAgent
 

@@ -30,7 +30,7 @@ For 95% of use cases, prefer the single WebResearcherAgent (agent.py).
 import asyncio
 from typing import Dict, List, Optional
 
-from webresearcher.logger import logger
+from webresearcher.log import logger
 from webresearcher.agent import WebResearcherAgent
 
 
@@ -53,11 +53,6 @@ class TestTimeScalingAgent:
     Args:
         llm_config: LLM configuration dict
         function_list: List of tool names to enable
-    
-    Example:
-        >>> agent = TestTimeScalingAgent(llm_config, ["search", "PythonInterpreter"])
-        >>> result = await agent.run("Complex question", num_parallel_agents=3)
-        >>> print(result["final_synthesized_answer"])
     """
 
     def __init__(self, llm_config: Dict, function_list: List[str]):

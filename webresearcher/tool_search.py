@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Union
 import os
 import http.client
 import json
-from webresearcher.logger import logger
+from webresearcher.log import logger
 from webresearcher.base import BaseTool
 
 
@@ -56,7 +56,7 @@ class Search(BaseTool):
             'X-API-KEY': SERPER_API_KEY,
             'Content-Type': 'application/json'
         }
-
+        res = None
         for i in range(5):
             try:
                 conn.request("POST", "/search", payload, headers)

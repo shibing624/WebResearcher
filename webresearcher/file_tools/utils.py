@@ -19,7 +19,7 @@ import requests
 from pydantic import BaseModel
 
 from webresearcher.base import ASSISTANT, DEFAULT_SYSTEM_MESSAGE, FUNCTION, SYSTEM, USER, ContentItem, Message
-from webresearcher.logger import logger
+from webresearcher.log import logger
 
 
 def append_signal_handler(sig, handler):

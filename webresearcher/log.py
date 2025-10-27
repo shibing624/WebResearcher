@@ -32,7 +32,7 @@ def set_log_level(level: str):
         level: Log level string (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     
     Example:
-        >>> from webresearcher.logger import set_log_level
+        >>> from webresearcher.log import set_log_level
         >>> set_log_level("DEBUG")
     """
     _logger.remove()
@@ -53,7 +53,7 @@ def add_file_logger(log_file: str, level: str = "DEBUG"):
         level: Log level for the file handler (default: DEBUG)
     
     Example:
-        >>> from webresearcher.logger import add_file_logger
+        >>> from webresearcher.log import add_file_logger
         >>> add_file_logger("webresearcher.log", "INFO")
     """
     _logger.add(

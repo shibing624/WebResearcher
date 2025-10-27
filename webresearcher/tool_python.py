@@ -11,7 +11,7 @@ from sandbox_fusion import run_code, RunCodeRequest
 from requests.exceptions import Timeout
 
 from webresearcher.base import BaseToolWithFileAccess, extract_code
-from webresearcher.logger import logger
+from webresearcher.log import logger
 
 SANDBOX_FUSION_ENDPOINTS = os.environ.get('SANDBOX_FUSION_ENDPOINTS', '').split(',')
 
@@ -40,7 +40,6 @@ class PythonInterpreter(BaseToolWithFileAccess):
     }
 
     def __init__(self,
-                 cfg: Optional[Dict] = None,
                  base_dir: Optional[str] = None,
                  safe_globals: Optional[dict] = None,
                  safe_locals: Optional[dict] = None):
@@ -49,17 +48,6 @@ class PythonInterpreter(BaseToolWithFileAccess):
         # Restricted global and local scope
         self.safe_globals: dict = safe_globals or {}
         self.safe_locals: dict = safe_locals or {}
-
-    @property
-    def args_format(self) -> str:
-        fmt = self.cfg.get('args_format')
-        if fmt is None:
-            if has_chinese_chars([self.name_for_human, self.name, self.description, self.parameters]):
-                fmt = 'The input for this tool should be a Markdown code block.'
-
-            else:
-                fmt = 'Enclose the code within triple backticks (`) at the beginning and end of the code.'
-        return fmt
 
     def run_python_code_locally(self, python_code: str) -> str:
         """

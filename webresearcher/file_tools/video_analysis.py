@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 import requests
 from PIL import Image
 from openai import OpenAI
-from webresearcher.logger import logger
+from webresearcher.log import logger
 from webresearcher.base import BaseTool
 
 # Configuration constants

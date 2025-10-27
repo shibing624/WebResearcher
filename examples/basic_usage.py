@@ -7,12 +7,14 @@ This script demonstrates the basic usage of WebResearcher
 for answering research questions.
 """
 import asyncio
+import os
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 from webresearcher import WebResearcherAgent
+from webresearcher import log
 
 
 async def example_basic_research():
@@ -24,11 +26,6 @@ async def example_basic_research():
     # Configure LLM
     llm_config = {
         "model": "gpt-4o",
-        "generate_cfg": {
-            "temperature": 0.6,
-            "top_p": 0.95,
-            "presence_penalty": 1.1,
-        }
     }
     
     # Create agent
@@ -36,9 +33,11 @@ async def example_basic_research():
         llm_config=llm_config,
         function_list=["search", "google_scholar", "PythonInterpreter"]
     )
+    level = log.LOG_LEVEL
+    print(agent.model, os.getenv('OPENAI_BASE_URL'), level)
     
     # Run research
-    question = "刘翔破纪录时候是多少岁?"
+    question = "刘翔破纪录时候是多少岁?代码计算下。"
     result = await agent.run(question)
     
     # Print results
@@ -46,30 +45,6 @@ async def example_basic_research():
     print(f"Answer: {result['prediction']}")
     print(f"\nResearch Report:\n{result['report']}")
     print(f"\nTermination: {result['termination']}")
-
-
-async def example_custom_tools():
-    """Example: Research with custom tool selection"""
-    print("\n" + "="*80)
-    print("Example 2: Custom Tool Selection")
-    print("="*80)
-    
-    llm_config = {
-        "model": "gpt-4o",
-        "generate_cfg": {"temperature": 0.6}
-    }
-    
-    # Only use search and scholar (no Python)
-    agent = WebResearcherAgent(
-        llm_config=llm_config,
-        function_list=["search", "google_scholar"]
-    )
-    
-    question = "What are the latest breakthroughs in quantum computing?"
-    result = await agent.run(question)
-    
-    print(f"\nQuestion: {question}")
-    print(f"Answer: {result['prediction']}")
 
 
 async def example_tts_mode():
@@ -111,11 +86,8 @@ async def main():
     """Run all examples"""
     # Example 1: Basic usage
     await example_basic_research()
-    
-    # Example 2: Custom tools
-    # await example_custom_tools()
-    
-    # Example 3: TTS mode (expensive!)
+
+    # Example 2: TTS mode (expensive!)
     # await example_tts_mode()
 
 

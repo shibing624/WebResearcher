@@ -35,7 +35,7 @@ from webresearcher.tts_agent import (
 )
 
 # Logger
-from webresearcher.logger import (
+from webresearcher.log import (
     logger,
     set_log_level,
     add_file_logger,

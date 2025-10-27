@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import http.client
 from contextlib import contextmanager
 
-from webresearcher.logger import logger
+from webresearcher.log import logger
 from webresearcher.base import BaseTool
 
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY')

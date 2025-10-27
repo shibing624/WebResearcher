@@ -13,7 +13,7 @@ from pandas.api.types import is_datetime64_any_dtype
 
 import pandas as pd
 
-from webresearcher.logger import logger
+from webresearcher.log import logger
 from webresearcher.base import (
     DEFAULT_WORKSPACE, 
     DEFAULT_MAX_INPUT_TOKENS,

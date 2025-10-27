@@ -7,7 +7,7 @@ from openai import OpenAI
 import time
 import tiktoken
 from webresearcher.prompt import EXTRACTOR_PROMPT
-from webresearcher.logger import logger
+from webresearcher.log import logger
 
 
 VISIT_SERVER_TIMEOUT = int(os.getenv("VISIT_SERVER_TIMEOUT", 200))

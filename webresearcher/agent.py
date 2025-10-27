@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 from openai import OpenAI, APIError, APIConnectionError, APITimeoutError
 
 from webresearcher.base import Message, build_text_completion_prompt, count_tokens as count_tokens_base
-from webresearcher.logger import logger
+from webresearcher.log import logger
 from webresearcher.prompt import get_iterresearch_system_prompt
 from webresearcher.tool_file import FileParser
 from webresearcher.tool_scholar import Scholar
@@ -95,7 +95,7 @@ class WebResearcherAgent:
             llm_config: Optional[Dict] = None,
             function_list: Optional[List[str]] = None,
     ):
-        self.llm_generate_cfg = llm_config["generate_cfg"]
+        self.llm_generate_cfg = llm_config.get("generate_cfg", {})
         self.model = llm_config.get("model", "gpt-4o")  # 主模型
         self.max_input_tokens = llm_config.get("max_input_tokens", 32000)
         self.llm_timeout = llm_config.get("llm_timeout", 300.0)
@@ -236,8 +236,12 @@ class WebResearcherAgent:
         loop = asyncio.get_event_loop()
 
         try:
-            # 1. 处理 Python 代码
-            if tool_call_str.startswith("python\n<code>"):
+            # 1. 优先检查是否包含 <code> 标签（处理 Python 代码）
+            # 支持多种格式：
+            # - python\n<code>...</code>
+            # - <code>...</code>
+            # - {"name": "PythonInterpreter", ...}\n<code>...</code>
+            if "<code>" in tool_call_str and "</code>" in tool_call_str:
                 code_raw = tool_call_str.split("<code>", 1)[1].rsplit("</code>", 1)[0].strip()
                 # PythonInterpreter.call 是同步的，用 executor 运行
                 result = await loop.run_in_executor(None, TOOL_MAP['PythonInterpreter'].call, code_raw)
