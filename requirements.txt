@@ -6,3 +6,4 @@ pydantic
 json5
 pandas
 tabulate
+pillow

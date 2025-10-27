@@ -38,6 +38,7 @@ dependencies = [
     "json5",
     "pandas",
     "tabulate",
+    "pillow",
 ]
 
 [project.optional-dependencies]
