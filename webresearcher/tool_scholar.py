@@ -137,7 +137,6 @@ class Scholar(BaseTool):
     def call(self, params: Union[str, dict], **kwargs) -> str:
         # assert GOOGLE_SEARCH_KEY is not None, "Please set the IDEALAB_SEARCH_KEY environment variable."
         try:
-            params = self._verify_json_format_args(params)
             query = params["query"]
         except:
             return "[google_scholar] Invalid request format: Input must be a JSON object containing 'query' field"

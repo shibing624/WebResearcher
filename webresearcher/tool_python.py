@@ -78,12 +78,6 @@ class PythonInterpreter(BaseToolWithFileAccess):
             sys.stdout = old_stdout
             new_stdout.close()
 
-    def observation(self, tool: dict, tool_dict: dict, tool_results, empty_mode: bool = False, readpage: bool = False,
-                    max_observation_length: int = None, tokenizer=None):
-        assert isinstance(tool_results,
-                          str), f"result of python code should be str, instead of {type(tool_results)}. {tool_results}"
-        return tool_results
-
     @property
     def function(self) -> dict:
         return {
