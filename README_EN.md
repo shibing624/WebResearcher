@@ -365,6 +365,10 @@ Writes comprehensive reports section-by-section:
   - `terminate`: Finish writing phase
 - **Output**: A complete research report with proper citations
 
+<p align="center">
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/webweaver.png" alt="WebWeaver架构" width="100%"/>
+</p>
+
 ### Key Features
 
 #### Dynamic Outline

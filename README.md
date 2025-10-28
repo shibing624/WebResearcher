@@ -360,6 +360,10 @@ llm_config = {
   - `terminate`: 完成写作阶段
 - **输出**: 带有适当引用的完整研究报告
 
+<p align="center">
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/webweaver.png" alt="WebWeaver架构" width="100%"/>
+</p>
+
 ### 核心特性
 
 #### 动态大纲
