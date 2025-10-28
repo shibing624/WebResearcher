@@ -337,7 +337,7 @@ llm_config = {
 
 See the [examples/](./examples/) directory for complete examples:
 
-- **[basic_usage.py](./examples/basic_usage.py)** - Getting started with WebResearcher
+- **[basic_usage.py](examples/webresearcher_usage.py)** - Getting started with WebResearcher
 - **[batch_research.py](./examples/batch_research.py)** - Processing multiple questions
 - **[custom_agent.py](./examples/custom_agent.py)** - Creating custom tools
 

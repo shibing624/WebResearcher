@@ -31,7 +31,7 @@ import asyncio
 from typing import Dict, List, Optional
 
 from webresearcher.log import logger
-from webresearcher.agent import WebResearcherAgent
+from webresearcher.web_researcher_agent import WebResearcherAgent
 
 
 class TestTimeScalingAgent:

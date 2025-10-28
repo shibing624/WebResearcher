@@ -20,17 +20,23 @@ async def main(args):
     # 1. 定义 LLM 配置
     llm_config = {
         "model": args.model,
-        "model_thinking_type": args.model_thinking_type,
         "generate_cfg": {
             'max_input_tokens': args.max_input_tokens,
             "temperature": args.temperature,
             "top_p": args.top_p,
             "presence_penalty": args.presence_penalty,
+            "model_thinking_type": args.model_thinking_type,
         }
     }
 
     # 2. 选择代理模式
-    if args.use_tts:
+    if args.use_webweaver:
+        logger.info("✅ Using WebWeaver dual-agent mode (dynamic outline)")
+        from webresearcher.web_weaver_agent import WebWeaverAgent
+        agent = WebWeaverAgent(llm_config=llm_config)
+        mode = 'webweaver'
+        use_tts_mode = False
+    elif args.use_tts:
         logger.warning("=" * 80)
         logger.warning("⚠️  Test-Time Scaling (TTS) Mode Enabled")
         logger.warning(f"   Cost: ~{args.num_parallel_agents + 0.5:.1f}x of single-agent baseline")
@@ -43,14 +49,16 @@ async def main(args):
             llm_config=llm_config,
             function_list=args.function_list,
         )
+        mode = 'tts'
         use_tts_mode = True
     else:
         logger.info("✅ Using single-agent mode (cost-effective)")
-        from webresearcher.agent import WebResearcherAgent
+        from webresearcher.web_researcher_agent import WebResearcherAgent
         agent = WebResearcherAgent(
             llm_config=llm_config,
             function_list=args.function_list,
         )
+        mode = 'single'
         use_tts_mode = False
 
     # 3. 准备输入数据 (与原始的 `run` 格式一致)
@@ -98,8 +106,10 @@ async def main(args):
         logger.info(f"📝 Question {idx}/{len(test_case)}: {question[:100]}...")
         logger.info(f"{'='*80}")
 
-        # Run agent (TTS or single)
-        if use_tts_mode:
+        # Run agent (WebWeaver / TTS / single)
+        if mode == 'webweaver':
+            final_result = await agent.run(question)
+        elif use_tts_mode:
             final_result = await agent.run(
                 question=question,
                 ground_truth=ground_truth,
@@ -115,7 +125,13 @@ async def main(args):
         print(f"Q: {final_result['question']}")
         print(f"Ground Truth: {ground_truth}")
         
-        if use_tts_mode:
+        if mode == 'webweaver':
+            print(f"\n--- Final Report ---")
+            print(final_result.get('final_report', ''))
+            print(f"\n--- Final Outline ---")
+            print(final_result.get('final_outline', ''))
+            print(f"\nMemory Bank Size: {final_result.get('memory_bank_size', 0)}")
+        elif use_tts_mode:
             print(f"Final Answer (TTS): {final_result['final_synthesized_answer']}")
             print(f"\n--- Parallel Runs: {len(final_result['parallel_runs'])} ---")
             for i, run in enumerate(final_result['parallel_runs'], 1):
@@ -127,7 +143,10 @@ async def main(args):
         
         if args.verbose:
             print(f"\n--- Full Trajectory ---")
-            if use_tts_mode:
+            if mode == 'webweaver':
+                # WebWeaver returns planner/writer internals in logs; not included by default
+                print("(WebWeaver) Full trajectory logging is not enabled in main.py; use CLI or examples/webweaver_usage.py for detailed logs.")
+            elif use_tts_mode:
                 print(json.dumps(final_result['parallel_runs'], indent=2, ensure_ascii=False))
             else:
                 print(json.dumps(final_result['trajectory'], indent=2, ensure_ascii=False))
@@ -144,6 +163,9 @@ Examples:
   
   # Test-Time Scaling (3-5x cost, higher accuracy)
   python main.py --use_tts --num_parallel_agents 3 --test_case_limit 1
+  
+  # WebWeaver dual-agent (dynamic outline, citation-grounded report)
+  python main.py --use_webweaver --test_case_limit 1
   
   # Custom model and tools
   python main.py --model gpt-4o --function_list search PythonInterpreter
@@ -170,6 +192,9 @@ Examples:
                         default=["search", "google_scholar", "PythonInterpreter"],
                         help="List of tools to enable")
     
+    # Modes
+    parser.add_argument("--use_webweaver", action="store_true",
+                        help="Enable WebWeaver dual-agent mode (Planner + Writer)")
     # Test-Time Scaling (TTS)
     parser.add_argument("--use_tts", action="store_true",
                         help="Enable Test-Time Scaling (3-5x cost, higher accuracy)")
@@ -185,9 +210,10 @@ Examples:
     args = parser.parse_args()
     
     # Print configuration
-    logger.info("🚀 Starting WebResearcher")
+    logger.info("🚀 Starting WebResearcher/WebWeaver")
     logger.info(f"   Model: {args.model}")
-    logger.info(f"   Mode: {'TTS (Test-Time Scaling)' if args.use_tts else 'Single Agent'}")
+    mode_label = 'WebWeaver' if args.use_webweaver else ('TTS (Test-Time Scaling)' if args.use_tts else 'Single Agent')
+    logger.info(f"   Mode: {mode_label}")
     logger.info(f"   Tools: {', '.join(args.function_list)}")
     
     asyncio.run(main(args))

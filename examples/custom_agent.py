@@ -96,7 +96,7 @@ async def example_custom_tool():
     }
     
     # Import standard tools
-    from webresearcher.agent import TOOL_MAP
+    from webresearcher.web_researcher_agent import TOOL_MAP
     
     # Register custom tool
     wiki_tool = WikipediaTool()
@@ -156,7 +156,7 @@ async def example_multi_custom_tools():
         "generate_cfg": {"temperature": 0.6}
     }
     
-    from webresearcher.agent import TOOL_MAP
+    from webresearcher.web_researcher_agent import TOOL_MAP
     
     # Register multiple custom tools
     TOOL_MAP['wikipedia'] = WikipediaTool()

@@ -17,15 +17,16 @@ from webresearcher.tool_scholar import Scholar
 from webresearcher.tool_python import PythonInterpreter
 from webresearcher.tool_search import Search
 from webresearcher.tool_visit import Visit
+from webresearcher.config import (
+    OPENAI_API_KEY, 
+    OPENAI_BASE_URL, 
+    OBS_START, 
+    OBS_END, 
+    MAX_LLM_CALL_PER_RUN, 
+    AGENT_TIMEOUT, 
+    FILE_DIR
+)
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL")
-
-OBS_START = '<tool_response>'
-OBS_END = '\n</tool_response>'
-
-MAX_LLM_CALL_PER_RUN = int(os.getenv('MAX_LLM_CALL_PER_RUN', 50))
-FILE_DIR = os.getenv('FILE_DIR', './files')
 
 TOOL_CLASS = [
     FileParser(),

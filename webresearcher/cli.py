@@ -12,7 +12,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from webresearcher.log import logger
-from webresearcher.agent import WebResearcherAgent
+from webresearcher.web_researcher_agent import WebResearcherAgent
+from webresearcher.web_weaver_agent import WebWeaverAgent
 from webresearcher.tts_agent import TestTimeScalingAgent
 
 
@@ -50,8 +51,13 @@ async def run_research(args):
         "search", "google_scholar", "PythonInterpreter"
     ]
     
-    # Create agent
-    if args.use_tts:
+    # Create agent based on mode
+    if args.use_webweaver:
+        logger.info("Using WebWeaver dual-agent mode with dynamic outline")
+        agent = WebWeaverAgent(llm_config=llm_config)
+        result = await agent.run(args.question)
+        answer = result.get('final_report', result.get('error', 'No report generated'))
+    elif args.use_tts:
         logger.info(f"Using Test-Time Scaling mode with {args.num_agents} agents")
         agent = TestTimeScalingAgent(
             llm_config=llm_config,
@@ -63,7 +69,7 @@ async def run_research(args):
         )
         answer = result['final_synthesized_answer']
     else:
-        logger.info("Using single-agent mode")
+        logger.info("Using WebResearcher single-agent mode (IterResearch)")
         agent = WebResearcherAgent(
             llm_config=llm_config,
             function_list=function_list,
@@ -96,8 +102,11 @@ def create_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Basic research question
+  # Basic research question (WebResearcher - single-agent)
   webresearcher "What is the capital of France?"
+  
+  # Use WebWeaver for comprehensive reports with citations
+  webresearcher "What are the causes of climate change?" --use-webweaver
   
   # With custom model and tools
   webresearcher "刘翔破纪录时候是多少岁?" --model gpt-4o --tools search,google_scholar
@@ -106,7 +115,7 @@ Examples:
   webresearcher "Complex question" --use-tts --num-agents 3
   
   # Save detailed results
-  webresearcher "Question" --output results.json
+  webresearcher "Question" --output results.json --use-webweaver
   
   # Verbose logging
   webresearcher "Question" --verbose
@@ -172,6 +181,12 @@ For more information: https://github.com/shibing624/WebResearcher
     )
     
     parser.add_argument(
+        '--use-webweaver',
+        action='store_true',
+        help='Use WebWeaver dual-agent mode for comprehensive reports with citations'
+    )
+    
+    parser.add_argument(
         '--use-tts',
         action='store_true',
         help='Enable Test-Time Scaling mode (higher accuracy, 3-5x cost)'
@@ -213,7 +228,8 @@ def main():
     # Setup logging
     setup_logger(args.verbose)
     
-    logger.info(f"Model: {args.model} | Mode: {'TTS' if args.use_tts else 'Single'}")
+    mode = 'WebWeaver' if args.use_webweaver else ('TTS' if args.use_tts else 'WebResearcher')
+    logger.info(f"Model: {args.model} | Mode: {mode}")
     
     try:
         # Run research

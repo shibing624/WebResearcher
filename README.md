@@ -338,7 +338,7 @@ llm_config = {
 
 查看 [examples/](./examples/) 目录获取完整示例：
 
-- **[basic_usage.py](./examples/basic_usage.py)** - WebResearcher 入门
+- **[webresearcher_usage.py](examples/webresearcher_usage.py)** - WebResearcher 入门
 - **[batch_research.py](./examples/batch_research.py)** - 批量处理多个问题
 - **[custom_agent.py](./examples/custom_agent.py)** - 创建自定义工具
 

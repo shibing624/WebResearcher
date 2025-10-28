@@ -3,7 +3,7 @@
 Tests for agent module
 """
 import pytest
-from webresearcher.agent import WebResearcherAgent, ResearchRound
+from webresearcher.web_researcher_agent import WebResearcherAgent, ResearchRound
 
 
 def test_research_round_get_context():

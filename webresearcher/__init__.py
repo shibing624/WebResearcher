@@ -8,7 +8,7 @@ featuring unbounded reasoning capability through iterative synthesis.
 @author: XuMing(xuming624@qq.com)
 """
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 __author__ = "XuMing"
 __email__ = "xuming624@qq.com"
 __url__ = "https://github.com/shibing624/WebResearcher"
@@ -24,14 +24,25 @@ from webresearcher.base import (
     extract_code,
 )
 
-from webresearcher.agent import (
+from webresearcher.web_researcher_agent import (
     WebResearcherAgent,
     ResearchRound,
     TOOL_MAP,
 )
 
+from webresearcher.web_weaver_agent import (
+    WebWeaverAgent,
+    WebWeaverPlanner,
+    WebWeaverWriter,
+)
+
 from webresearcher.tts_agent import (
     TestTimeScalingAgent,
+)
+
+from webresearcher.tool_memory import (
+    MemoryBank,
+    RetrieveTool,
 )
 
 # Logger
@@ -57,6 +68,9 @@ __all__ = [
     # Core classes
     "WebResearcherAgent",
     "ResearchRound",
+    "WebWeaverAgent",
+    "WebWeaverPlanner",
+    "WebWeaverWriter",
     "TestTimeScalingAgent",
     "TOOL_MAP",
     
@@ -81,6 +95,8 @@ __all__ = [
     "Scholar",
     "PythonInterpreter",
     "FileParser",
+    "MemoryBank",
+    "RetrieveTool",
 ]
 
 
