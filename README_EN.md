@@ -296,7 +296,7 @@ Based on the paper's evaluation:
 - **Accuracy**: Competitive with or exceeds baseline agents
 
 <p align="center">
-  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/performance.png" alt="Performance" width="90%"/>
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/performance.png" alt="Performance" width="100%"/>
 </p>
 
 ## 🔧 Configuration

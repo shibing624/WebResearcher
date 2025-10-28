@@ -297,7 +297,7 @@ result = await agent.run("你的问题")
 - **准确性**: 与基线 Agent 相当或超越
 
 <p align="center">
-  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/performance.png" alt="性能表现" width="90%"/>
+  <img src="https://github.com/shibing624/WebResearcher/blob/main/docs/performance.png" alt="性能表现" width="100%"/>
 </p>
 
 ## 🔧 配置
