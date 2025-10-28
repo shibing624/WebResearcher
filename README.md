@@ -306,11 +306,11 @@ result = await agent.run("你的问题")
 
 ```bash
 # 必需
-OPENAI_API_KEY=sk-...              # OpenAI API 密钥
+OPENAI_API_KEY=...              # OpenAI API 密钥 或 DeepSeek API 密钥
 SERPER_API_KEY=...                 # Serper API（Google 搜索）
 
 # 可选
-OPENAI_BASE_URL=https://...        # 自定义 OpenAI 端点
+OPENAI_BASE_URL=https://...        # 自定义 OpenAI 端点, 或 DeepSeek base url
 JINA_API_KEY=...                   # Jina AI（网页抓取）
 SANDBOX_FUSION_ENDPOINTS=...       # 代码执行沙盒
 MAX_LLM_CALL_PER_RUN=50           # 每次研究的最大迭代次数
@@ -321,12 +321,12 @@ FILE_DIR=./files                   # 文件存储目录
 
 ```python
 llm_config = {
-    "model": "gpt-4o",              # 或: o3-mini, gpt-4-turbo 等
+    "model": "deepseek-v3.1",              # 或: o3-mini, gpt-4-turbo 等
     "generate_cfg": {
         "temperature": 0.6,          # 采样温度 (0.0-2.0)
         "top_p": 0.95,              # 核采样
         "presence_penalty": 1.1,     # 重复惩罚
-        "model_thinking_type": "enabled"  # enabled|disabled|auto
+        "model_thinking_type": "enabled"  # enabled|disabled|auto, 如果不支持thinking，则不设置
     },
     "max_input_tokens": 32000,      # 上下文窗口限制
     "llm_timeout": 300.0,           # LLM API 超时（秒）

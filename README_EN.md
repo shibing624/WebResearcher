@@ -305,11 +305,11 @@ Based on the paper's evaluation:
 
 ```bash
 # Required
-OPENAI_API_KEY=...              # OpenAI API key
+OPENAI_API_KEY=...              # OpenAI API key or deepseek api key
 SERPER_API_KEY=...                 # Serper API for Google Search
 
 # Optional
-OPENAI_BASE_URL=https://...        # Custom OpenAI endpoint
+OPENAI_BASE_URL=https://...        # Custom OpenAI endpoint, or deepseek base url
 JINA_API_KEY=...                   # Jina AI for web scraping
 SANDBOX_FUSION_ENDPOINTS=...       # Code execution sandbox
 MAX_LLM_CALL_PER_RUN=50           # Max iterations per research
@@ -320,12 +320,12 @@ FILE_DIR=./files                   # File storage directory
 
 ```python
 llm_config = {
-    "model": "gpt-4o",              # Or: o3-mini, gpt-4-turbo, etc.
+    "model": "deepseek-v3.1",              # Or: o3-mini, gpt-4-turbo, etc.
     "generate_cfg": {
         "temperature": 0.6,          # Sampling temperature (0.0-2.0)
         "top_p": 0.95,              # Nucleus sampling
         "presence_penalty": 1.1,     # Repetition penalty
-        "model_thinking_type": "enabled"  # enabled|disabled|auto
+        "model_thinking_type": "enabled"  # enabled|disabled|auto, if not supported, do not set
     },
     "max_input_tokens": 32000,      # Context window limit
     "llm_timeout": 300.0,           # LLM API timeout (seconds)
