@@ -27,6 +27,10 @@
 
 **WebResearcher** is an autonomous research agent built on the **IterResearch paradigm**, designed to emulate expert-level research workflows. Unlike traditional agents that suffer from context overflow and noise accumulation, WebResearcher breaks research into discrete rounds with iterative synthesis.
 
+This project provides two research agents:
+- **WebResearcher Agent**: Single-agent iterative research, ideal for quick answers
+- **WebWeaver Agent**: Dual-agent collaborative research, ideal for structured long-form reports
+
 ### The Problem with Traditional Agents
 
 Current open-source research agents rely on **mono-contextual, linear accumulation**:
@@ -333,6 +337,126 @@ llm_config = {
 }
 ```
 
+## 🎭 WebWeaver Agent
+
+**WebWeaver** is a dual-agent research framework implementing the dynamic outline paradigm, providing a more structured approach to research compared to the single-agent WebResearcher.
+
+### Architecture Components
+
+#### 1. Memory Bank
+A shared evidence storage that bridges the Planner and Writer agents:
+- **Add Evidence**: Planner stores findings with citation IDs
+- **Retrieve Evidence**: Writer fetches specific evidence by ID
+- **Decoupled Storage**: Keeps agents focused on their specific tasks
+
+#### 2. Planner Agent
+Explores research questions and builds a citation-grounded outline:
+- **Actions**: 
+  - `search`: Gather information from web
+  - `write_outline`: Create/update research outline with citations
+  - `terminate`: Finish planning phase
+- **Output**: A structured outline with citation IDs linking to evidence
+
+#### 3. Writer Agent
+Writes comprehensive reports section-by-section:
+- **Actions**:
+  - `retrieve`: Fetch evidence from Memory Bank
+  - `write`: Write report sections with inline citations
+  - `terminate`: Finish writing phase
+- **Output**: A complete research report with proper citations
+
+### Key Features
+
+#### Dynamic Outline
+Unlike traditional static outlines, WebWeaver's outline evolves as new evidence is discovered:
+1. Planner searches and discovers evidence
+2. Each finding gets a unique citation ID
+3. Outline is updated to incorporate new evidence
+4. Process repeats until outline is comprehensive
+
+#### Citation-Grounded Reports
+All claims in the final report are backed by specific evidence:
+- Evidence is stored with full context in Memory Bank
+- Writer retrieves only relevant evidence for each section
+- Citations are embedded inline (e.g., `[cite:id_1]`)
+
+### WebWeaver Usage
+
+#### Basic Usage
+
+```python
+import asyncio
+from webresearcher import WebWeaverAgent
+
+async def main():
+    # Configure LLM
+    llm_config = {
+        "model": "gpt-4o",
+        "generate_cfg": {
+            "temperature": 0.1,  # Low temperature for factual research
+            "top_p": 0.95,
+            "max_tokens": 10000,
+        },
+        "llm_timeout": 300.0,
+    }
+    
+    # Initialize agent
+    agent = WebWeaverAgent(llm_config=llm_config)
+    
+    # Run research
+    question = "What are the main causes of climate change?"
+    result = await agent.run(question)
+    
+    # Access results
+    print("Final Outline:", result['final_outline'])
+    print("Final Report:", result['final_report'])
+    print("Memory Bank Size:", result['memory_bank_size'])
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+#### Command Line Interface
+
+```bash
+# Use WebWeaver mode
+webresearcher "What are the causes of climate change?" --use-webweaver
+
+# Save results to file
+webresearcher "Research question" --use-webweaver --output report.json
+
+# Verbose logging
+webresearcher "Question" --use-webweaver --verbose
+```
+
+### WebResearcher vs WebWeaver Comparison
+
+| Feature | WebResearcher | WebWeaver |
+|---------|---------------|-----------|
+| Architecture | Single-agent | Dual-agent |
+| Paradigm | IterResearch | Dynamic Outline |
+| Memory | Stateless workspace | Memory Bank |
+| Output | Direct answer | Outline + Report |
+| Citations | Implicit | Explicit with IDs |
+| Structure | Iterative synthesis | Hierarchical |
+| Best for | Quick answers | Comprehensive reports |
+
+### When to Use WebWeaver
+
+Choose **WebWeaver** when you need:
+- ✅ Long-form, comprehensive research reports
+- ✅ Explicit citation tracking
+- ✅ Structured outline with evidence mapping
+- ✅ Reproducible research process
+- ✅ Multi-section documents
+
+Choose **WebResearcher** when you need:
+- ✅ Quick, focused answers
+- ✅ Simpler architecture
+- ✅ Direct question-answer format
+- ✅ Lower token usage
+- ✅ Faster results
+
 ## 📝 Examples
 
 See the [examples/](./examples/) directory for complete examples:
@@ -396,6 +520,18 @@ If you use WebResearcher in your research, please cite:
 }
 ```
 
+```bibtex
+@misc{li2025webweaverstructuringwebscaleevidence,
+      title={WebWeaver: Structuring Web-Scale Evidence with Dynamic Outlines for Open-Ended Deep Research}, 
+      author={Zijian Li and Xin Guan and Bo Zhang and Shen Huang and Houquan Zhou and Shaopeng Lai and Ming Yan and Yong Jiang and Pengjun Xie and Fei Huang and Jun Zhang and Jingren Zhou},
+      year={2025},
+      eprint={2509.13312},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2509.13312}, 
+}
+```
+
 ## 📄 License
 
 This project is licensed under the [Apache License 2.0](./LICENSE) - free for commercial use.
@@ -405,6 +541,7 @@ This project is licensed under the [Apache License 2.0](./LICENSE) - free for co
 This project is inspired by and built upon the research from:
 
 - **[WebResearcher Paper](https://arxiv.org/abs/2509.13309)** by Qiao et al.
+- **[WebWeaver Paper](https://arxiv.org/abs/2509.13312)** by Li et al.
 - **[Alibaba-NLP/DeepResearch](https://github.com/Alibaba-NLP/DeepResearch)** - Original research implementation
 
 Special thanks to the authors for their groundbreaking work on iterative research paradigms!

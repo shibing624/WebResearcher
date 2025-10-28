@@ -28,6 +28,10 @@
 
 **WebResearcher** 是迭代式深度研究智能体，基于 **IterResearch 范式**构建的自主研究智能体，旨在模拟专家级别的研究工作流。与遭受上下文溢出和噪音累积困扰的传统 Agent 不同，WebResearcher 将研究分解为离散的轮次，并进行迭代综合。
 
+本项目提供两种研究智能体：
+- **WebResearcher Agent**: 单智能体迭代研究，适合快速问答
+- **WebWeaver Agent**: 双智能体协作研究，适合生成结构化长篇报告
+
 ### 传统 Agent 的问题
 
 当前的开源研究 Agent 依赖于**单上下文、线性累积**模式：
@@ -328,6 +332,126 @@ llm_config = {
 }
 ```
 
+## 🎭 WebWeaver Agent
+
+**WebWeaver** 是一个双智能体研究框架，实现了动态大纲范式，提供比单智能体 WebResearcher 更结构化的研究方法。
+
+### 架构组件
+
+#### 1. Memory Bank（记忆库）
+共享的证据存储，连接 Planner 和 Writer 智能体：
+- **添加证据**: Planner 存储发现的内容并分配引用 ID
+- **检索证据**: Writer 通过 ID 获取特定证据
+- **解耦存储**: 让智能体专注于各自的任务
+
+#### 2. Planner Agent（规划智能体）
+探索研究问题并构建带引用的大纲：
+- **操作**:
+  - `search`: 从网络收集信息
+  - `write_outline`: 创建/更新带引用的研究大纲
+  - `terminate`: 完成规划阶段
+- **输出**: 带有引用 ID 的结构化大纲
+
+#### 3. Writer Agent（写作智能体）
+逐节撰写综合报告：
+- **操作**:
+  - `retrieve`: 从 Memory Bank 获取证据
+  - `write`: 撰写带内联引用的报告章节
+  - `terminate`: 完成写作阶段
+- **输出**: 带有适当引用的完整研究报告
+
+### 核心特性
+
+#### 动态大纲
+与传统静态大纲不同，WebWeaver 的大纲随着新证据的发现而演化：
+1. Planner 搜索并发现证据
+2. 每个发现获得唯一的引用 ID
+3. 大纲更新以纳入新证据
+4. 过程重复直到大纲完整
+
+#### 引用支撑的报告
+最终报告中的所有声明都有具体证据支持：
+- 证据在 Memory Bank 中存储完整上下文
+- Writer 仅检索每个章节的相关证据
+- 引用内联嵌入（例如 `[cite:id_1]`）
+
+### WebWeaver 使用方法
+
+#### 基础使用
+
+```python
+import asyncio
+from webresearcher import WebWeaverAgent
+
+async def main():
+    # 配置 LLM
+    llm_config = {
+        "model": "gpt-4o",
+        "generate_cfg": {
+            "temperature": 0.1,  # 低温度用于事实性研究
+            "top_p": 0.95,
+            "max_tokens": 10000,
+        },
+        "llm_timeout": 300.0,
+    }
+    
+    # 初始化智能体
+    agent = WebWeaverAgent(llm_config=llm_config)
+    
+    # 执行研究
+    question = "气候变化的主要原因是什么？"
+    result = await agent.run(question)
+    
+    # 访问结果
+    print("最终大纲:", result['final_outline'])
+    print("最终报告:", result['final_report'])
+    print("记忆库大小:", result['memory_bank_size'])
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+#### 命令行使用
+
+```bash
+# 使用 WebWeaver 模式
+webresearcher "气候变化的原因是什么？" --use-webweaver
+
+# 保存结果到文件
+webresearcher "研究问题" --use-webweaver --output report.json
+
+# 详细日志
+webresearcher "问题" --use-webweaver --verbose
+```
+
+### WebResearcher vs WebWeaver 对比
+
+| 特性 | WebResearcher | WebWeaver |
+|------|---------------|-----------|
+| 架构 | 单智能体 | 双智能体 |
+| 范式 | IterResearch | 动态大纲 |
+| 记忆 | 无状态工作空间 | Memory Bank |
+| 输出 | 直接答案 | 大纲 + 报告 |
+| 引用 | 隐式 | 显式带 ID |
+| 结构 | 迭代综合 | 层次化 |
+| 适用场景 | 快速问答 | 综合报告 |
+
+### 何时使用 WebWeaver
+
+选择 **WebWeaver** 当您需要：
+- ✅ 长篇、综合性研究报告
+- ✅ 显式引用追踪
+- ✅ 带证据映射的结构化大纲
+- ✅ 可复现的研究过程
+- ✅ 多章节文档
+
+选择 **WebResearcher** 当您需要：
+- ✅ 快速、聚焦的答案
+- ✅ 更简单的架构
+- ✅ 直接的问答格式
+- ✅ 更低的 Token 使用量
+- ✅ 更快的结果
+
 ## 📝 示例
 
 查看 [examples/](./examples/) 目录获取完整示例：
@@ -392,6 +516,18 @@ pytest --cov=webresearcher
 }
 ```
 
+```bibtex
+@misc{li2025webweaverstructuringwebscaleevidence,
+      title={WebWeaver: Structuring Web-Scale Evidence with Dynamic Outlines for Open-Ended Deep Research}, 
+      author={Zijian Li and Xin Guan and Bo Zhang and Shen Huang and Houquan Zhou and Shaopeng Lai and Ming Yan and Yong Jiang and Pengjun Xie and Fei Huang and Jun Zhang and Jingren Zhou},
+      year={2025},
+      eprint={2509.13312},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2509.13312}, 
+}
+```
+
 ## 📄 许可证
 
 本项目采用 [Apache License 2.0](./LICENSE) 许可证 - 可免费用于商业用途。
@@ -401,6 +537,7 @@ pytest --cov=webresearcher
 本项目受以下研究启发并在此基础上构建：
 
 - **[WebResearcher 论文](https://arxiv.org/abs/2509.13309)** by Qiao et al.
+- **[WebWeaver 论文](https://arxiv.org/abs/2509.13312)** by Li et al.
 - **[Alibaba-NLP/DeepResearch](https://github.com/Alibaba-NLP/DeepResearch)** - 原始研究实现
 
 特别感谢论文作者在迭代研究范式上的开创性工作！
