@@ -41,7 +41,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install .
-          pip install pytest
+          pip install pytest pytest-cov black flake8 mypy
       - name: PKG-TEST
         run: |
           python -m pytest
