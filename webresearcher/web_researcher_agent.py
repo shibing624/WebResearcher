@@ -241,11 +241,10 @@ class WebResearcherAgent:
             # 支持多种格式：
             # - python\n<code>...</code>
             # - <code>...</code>
-            # - {"name": "PythonInterpreter", ...}\n<code>...</code>
+            # - {"name": "python", ...}\n<code>...</code>
             if "<code>" in tool_call_str and "</code>" in tool_call_str:
                 code_raw = tool_call_str.split("<code>", 1)[1].rsplit("</code>", 1)[0].strip()
-                # PythonInterpreter.call 是同步的，用 executor 运行
-                result = await loop.run_in_executor(None, TOOL_MAP['PythonInterpreter'].call, code_raw)
+                result = await loop.run_in_executor(None, TOOL_MAP['python'].call, code_raw)
                 return result
 
             # 2. 处理 JSON 工具调用
@@ -478,7 +477,7 @@ async def main():
     # 2. 实例化 agent
     agent = WebResearcherAgent(
         llm_config=llm_config,
-        function_list=['search', 'PythonInterpreter']
+        function_list=['search', 'python']
     )
 
     question = '刘翔破纪录时候是多少岁?'

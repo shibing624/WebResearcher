@@ -25,15 +25,18 @@ async def main(args):
             "temperature": args.temperature,
             "top_p": args.top_p,
             "presence_penalty": args.presence_penalty,
-            "model_thinking_type": args.model_thinking_type,
         }
     }
+    
+    # Only add model_thinking_type if explicitly set by user (not default)
+    if hasattr(args, 'model_thinking_type') and args.model_thinking_type != 'disabled':
+        llm_config["generate_cfg"]["model_thinking_type"] = args.model_thinking_type
 
     # 2. 选择代理模式
     if args.use_webweaver:
         logger.info("✅ Using WebWeaver dual-agent mode (dynamic outline)")
         from webresearcher.web_weaver_agent import WebWeaverAgent
-        agent = WebWeaverAgent(llm_config=llm_config)
+        agent = WebWeaverAgent(llm_config=llm_config, function_list=args.function_list)
         mode = 'webweaver'
         use_tts_mode = False
     elif args.use_tts:
@@ -126,10 +129,10 @@ async def main(args):
         print(f"Ground Truth: {ground_truth}")
         
         if mode == 'webweaver':
-            print(f"\n--- Final Report ---")
-            print(final_result.get('final_report', ''))
             print(f"\n--- Final Outline ---")
             print(final_result.get('final_outline', ''))
+            print(f"\n--- Final Report ---")
+            print(final_result.get('final_report', ''))
             print(f"\nMemory Bank Size: {final_result.get('memory_bank_size', 0)}")
         elif use_tts_mode:
             print(f"Final Answer (TTS): {final_result['final_synthesized_answer']}")
@@ -168,7 +171,7 @@ Examples:
   python main.py --use_webweaver --test_case_limit 1
   
   # Custom model and tools
-  python main.py --model gpt-4o --function_list search PythonInterpreter
+  python main.py --model gpt-4o --function_list search python
         """
     )
     
@@ -183,14 +186,14 @@ Examples:
                         help="Presence penalty")
     parser.add_argument("--max_input_tokens", type=int, default=32000,
                         help="Maximum input tokens")
-    parser.add_argument("--model_thinking_type", type=str, default='enabled',
+    parser.add_argument("--model_thinking_type", type=str, default='disabled',
                         choices=['enabled', 'disabled', 'auto'],
                         help="Model thinking mode")
     
     # Agent configuration
     parser.add_argument("--function_list", type=str, nargs='*',
-                        default=["search", "google_scholar", "PythonInterpreter"],
-                        help="List of tools to enable")
+                        default=["search", "google_scholar", "python"],
+                        help="List of tools to enable, all tools: ['search', 'google_scholar', 'visit', 'python', 'parse_file']")
     
     # Modes
     parser.add_argument("--use_webweaver", action="store_true",

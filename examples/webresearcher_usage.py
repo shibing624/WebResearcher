@@ -31,7 +31,7 @@ async def example_basic_research():
     # Create agent
     agent = WebResearcherAgent(
         llm_config=llm_config,
-        function_list=["search", "google_scholar", "PythonInterpreter"]
+        function_list=["search", "google_scholar", "python"]
     )
     level = log.LOG_LEVEL
     print(agent.model, os.getenv('OPENAI_BASE_URL'), level)

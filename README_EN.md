@@ -96,7 +96,7 @@ Round i:
 | `search` | Google Search via Serper API | General web information |
 | `google_scholar` | Academic paper search | Scientific research |
 | `visit` | Webpage content extraction | Deep content analysis |
-| `PythonInterpreter` | Sandboxed code execution | Data analysis, calculations |
+| `python` | Sandboxed code execution | Data analysis, calculations |
 | `parse_file` | Multi-format file parser | Document processing |
 
 ## 🚀 Quick Start
@@ -133,7 +133,7 @@ llm_config = {
 # Create agent
 agent = WebResearcherAgent(
     llm_config=llm_config,
-    function_list=["search", "google_scholar", "PythonInterpreter"]
+    function_list=["search", "google_scholar", "python"]
 )
 
 # Research
@@ -203,7 +203,7 @@ See [examples/batch_research.py](./examples/batch_research.py) for advanced batc
 
 ### Python Interpreter Configuration
 
-The `PythonInterpreter` tool supports two execution modes:
+The `python` tool supports two execution modes:
 
 **1. Sandbox Mode (Recommended for Production):**
 ```bash

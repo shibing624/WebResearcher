@@ -20,8 +20,10 @@ from webresearcher.log import logger
 from webresearcher.prompt import get_webweaver_planner_prompt, get_webweaver_writer_prompt
 from webresearcher.tool_memory import MemoryBank, RetrieveTool
 from webresearcher.tool_planner_search import PlannerSearchTool
-from webresearcher.tool_python import PythonInterpreter
-from webresearcher.tool_scholar import Scholar
+from webresearcher.tool_planner_scholar import PlannerScholarTool
+from webresearcher.tool_planner_visit import PlannerVisitTool
+from webresearcher.tool_planner_python import PlannerPythonTool
+from webresearcher.tool_planner_file import PlannerFileTool
 from webresearcher.config import (
     OPENAI_API_KEY, 
     OPENAI_BASE_URL, 
@@ -211,7 +213,7 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
     Based on WebWeaver paper Section 3.2 and Appendix B.2.
     """
 
-    def __init__(self, llm_config: Dict, memory_bank: MemoryBank):
+    def __init__(self, llm_config: Dict, memory_bank: MemoryBank, function_list: Optional[List[str]] = None):
         """
         Initialize Planner agent.
         
@@ -219,13 +221,15 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
             llm_config: LLM configuration
             memory_bank: Shared MemoryBank instance
         """
-        # Planner's tool set
-        tool_map = {
+        # Planner's tool set - all 5 common tools like WebResearcher
+        full_tool_map = {
             "search": PlannerSearchTool(memory_bank),
-            # Can add more tools like:
-            # "google_scholar": PlannerScholarTool(memory_bank),
-            # "PythonInterpreter": PythonInterpreter(),
+            "google_scholar": PlannerScholarTool(memory_bank),
+            "visit": PlannerVisitTool(memory_bank),
+            "python": PlannerPythonTool(memory_bank),
+            "parse_file": PlannerFileTool(memory_bank),
         }
+        tool_map = {k: v for k, v in full_tool_map.items() if not function_list or k in function_list} or full_tool_map
 
         super().__init__(llm_config, tool_map)
         self.memory_bank = memory_bank
@@ -417,8 +421,6 @@ class WebWeaverWriter(BaseWebWeaverAgent):
         steps_since_last_write = 0
         # Heuristics
         MAX_IDLE_BEFORE_FORCE_WRITE_HINT = 6   # iterations with no <write> before adding a strong hint
-        MAX_REPEAT_RETRIEVE_BEFORE_SKIP = 1    # allow first identical retrieve to hit cache/skip, further ones are blocked
-
         for i in range(MAX_LLM_CALL_PER_RUN):
             # Build Writer context
             context_str = (
@@ -528,7 +530,7 @@ class WebWeaverAgent:
     Based on WebWeaver paper dual-agent framework.
     """
 
-    def __init__(self, llm_config: Optional[Dict] = None):
+    def __init__(self, llm_config: Optional[Dict] = None, function_list: Optional[List[str]] = None):
         """
         Initialize WebWeaver agent.
         
@@ -549,7 +551,7 @@ class WebWeaverAgent:
         self.memory_bank = MemoryBank()
 
         # Initialize sub-agents
-        self.planner = WebWeaverPlanner(self.llm_config, self.memory_bank)
+        self.planner = WebWeaverPlanner(self.llm_config, self.memory_bank, function_list=function_list)
         self.writer = WebWeaverWriter(self.llm_config, self.memory_bank)
 
         logger.debug("WebWeaver Dual-Agent Framework initialized.")

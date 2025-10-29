@@ -39,7 +39,7 @@ async def batch_research(questions, output_dir="./results"):
     
     agent = WebResearcherAgent(
         llm_config=llm_config,
-        function_list=["search", "google_scholar", "PythonInterpreter"]
+        function_list=["search", "google_scholar", "python"]
     )
     
     # Process each question

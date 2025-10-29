@@ -97,7 +97,7 @@ WebResearcher 实现了 **IterResearch 范式**，每轮通过**单次 LLM 调�
 | `search` | 通过 Serper API 的 Google 搜索 | 通用网页信息 |
 | `google_scholar` | 学术论文搜索 | 科研文献查询 |
 | `visit` | 网页内容提取 | 深度内容分析 |
-| `PythonInterpreter` | 沙盒代码执行 | 数据分析、计算 |
+| `python` | 沙盒代码执行 | 数据分析、计算 |
 | `parse_file` | 多格式文件解析器 | 文档处理 |
 
 ## 🚀 快速开始
@@ -134,7 +134,7 @@ llm_config = {
 # 创建 Agent
 agent = WebResearcherAgent(
     llm_config=llm_config,
-    function_list=["search", "google_scholar", "PythonInterpreter"]
+    function_list=["search", "google_scholar", "python"]
 )
 
 # 开始研究

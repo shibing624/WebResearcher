@@ -27,10 +27,10 @@ Current date: """
 TOOL_DESCRIPTIONS = {
     "search": {"type": "function", "function": {"name": "search", "description": "Perform Google web searches then returns a string of the top search results. Accepts multiple queries.", "parameters": {"type": "object", "properties": {"query": {"type": "array", "items": {"type": "string", "description": "The search query."}, "minItems": 1, "description": "The list of search queries."}}, "required": ["query"]}}},
     "visit": {"type": "function", "function": {"name": "visit", "description": "Visit webpage(s) and return the summary of the content.", "parameters": {"type": "object", "properties": {"url": {"type": "array", "items": {"type": "string"}, "description": "The URL(s) of the webpage(s) to visit. Can be a single URL or an array of URLs."}, "goal": {"type": "string", "description": "The specific information goal for visiting webpage(s)."}}, "required": ["url", "goal"]}}},
-    "PythonInterpreter": {
+    "python": {
         "type": "function",
         "function": {
-            "name": "PythonInterpreter",
+            "name": "python",
             "description": """Executes Python code in a sandboxed environment. To use this tool, you must follow this format:
 1. The 'arguments' JSON object must be empty: {}.
 2. The Python code to be executed must be placed immediately after the JSON block, enclosed within <code> and </code> tags.
@@ -39,7 +39,7 @@ IMPORTANT: Any output you want to see MUST be printed to standard output using t
 
 Example of a correct call:
 <tool_call>
-{"name": "PythonInterpreter", "arguments": {}}
+{"name": "python", "arguments": {}}
 <code>
 import numpy as np
 # Your code here

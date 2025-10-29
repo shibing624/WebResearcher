@@ -42,13 +42,16 @@ async def run_research(args):
             "temperature": args.temperature,
             "top_p": args.top_p,
             "presence_penalty": args.presence_penalty,
-            "model_thinking_type": args.thinking_type,
         }
     }
     
+    # Only add model_thinking_type if explicitly set by user (not default)
+    if hasattr(args, 'thinking_type') and args.thinking_type != 'disabled':
+        llm_config["generate_cfg"]["model_thinking_type"] = args.thinking_type
+    
     # Parse function list
     function_list = args.tools.split(',') if args.tools else [
-        "search", "google_scholar", "PythonInterpreter"
+        "search", "google_scholar", "python"
     ]
     
     # Create agent based on mode
@@ -169,15 +172,15 @@ For more information: https://github.com/shibing624/WebResearcher
         '--thinking-type',
         type=str,
         choices=['enabled', 'disabled', 'auto'],
-        default='enabled',
-        help='Model thinking mode (default: enabled)'
+        default='disabled',
+        help='Model thinking mode (default: disabled)'
     )
     
     parser.add_argument(
         '--tools',
         type=str,
-        default='search,google_scholar,PythonInterpreter',
-        help='Comma-separated list of tools to enable (default: search,google_scholar,PythonInterpreter)'
+        default='search,google_scholar,python',
+        help='Comma-separated list of tools to enable (default: search,google_scholar,python)'
     )
     
     parser.add_argument(
