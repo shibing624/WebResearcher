@@ -5,6 +5,7 @@
 """
 import pytest
 import asyncio
+import os
 from webresearcher.tool_memory import MemoryBank, RetrieveTool
 from webresearcher.tool_planner_search import PlannerSearchTool
 from webresearcher.web_weaver_agent import (
@@ -72,39 +73,43 @@ def test_planner_parse_output():
     }
 
     memory = MemoryBank()
-    planner = WebWeaverPlanner(llm_config, memory)
+    # Mock OpenAI client to avoid API key requirement
+    with pytest.MonkeyPatch().context() as m:
+        m.setenv("OPENAI_API_KEY", "test-key")
+        m.setenv("OPENAI_BASE_URL", "http://test")
+        planner = WebWeaverPlanner(llm_config, memory)
 
-    # Test tool_call parsing
-    output1 = """
+        # Test tool_call parsing
+        output1 = """
 <think>I need to search for information</think>
 <tool_call>
 {"name": "search", "arguments": {"query": ["test query"]}}
 </tool_call>
 """
-    parsed1 = planner.parse_output(output1)
-    assert parsed1["action_type"] == "tool_call"
-    assert "search" in parsed1["action_content"]
-    assert "I need to search" in parsed1["think"]
+        parsed1 = planner.parse_output(output1)
+        assert parsed1["action_type"] == "tool_call"
+        assert "search" in parsed1["action_content"]
+        assert "I need to search" in parsed1["think"]
 
-    # Test write_outline parsing
-    output2 = """
+        # Test write_outline parsing
+        output2 = """
 <think>Now I'll create the outline</think>
 <write_outline>
 1. Introduction <citation>id_1</citation>
 2. Methods <citation>id_2</citation>
 </write_outline>
 """
-    parsed2 = planner.parse_output(output2)
-    assert parsed2["action_type"] == "write_outline"
-    assert "Introduction" in parsed2["action_content"]
+        parsed2 = planner.parse_output(output2)
+        assert parsed2["action_type"] == "write_outline"
+        assert "Introduction" in parsed2["action_content"]
 
-    # Test terminate parsing
-    output3 = """
+        # Test terminate parsing
+        output3 = """
 <think>The outline is complete</think>
 <terminate>
 """
-    parsed3 = planner.parse_output(output3)
-    assert parsed3["action_type"] == "terminate"
+        parsed3 = planner.parse_output(output3)
+        assert parsed3["action_type"] == "terminate"
 
 
 def test_writer_parse_output():
@@ -115,21 +120,25 @@ def test_writer_parse_output():
     }
 
     memory = MemoryBank()
-    writer = WebWeaverWriter(llm_config, memory)
+    # Mock OpenAI client to avoid API key requirement
+    with pytest.MonkeyPatch().context() as m:
+        m.setenv("OPENAI_API_KEY", "test-key")
+        m.setenv("OPENAI_BASE_URL", "http://test")
+        writer = WebWeaverWriter(llm_config, memory)
 
-    # Test retrieve parsing
-    output1 = """
+        # Test retrieve parsing
+        output1 = """
 <think>I need to retrieve evidence</think>
 <tool_call>
 {"name": "retrieve", "arguments": {"citation_ids": ["id_1"]}}
 </tool_call>
 """
-    parsed1 = writer.parse_output(output1)
-    assert parsed1["action_type"] == "tool_call"
-    assert "retrieve" in parsed1["action_content"]
+        parsed1 = writer.parse_output(output1)
+        assert parsed1["action_type"] == "tool_call"
+        assert "retrieve" in parsed1["action_content"]
 
-    # Test write parsing
-    output2 = """
+        # Test write parsing
+        output2 = """
 <think>Now I'll write the section</think>
 <write>
 ## Introduction
@@ -137,10 +146,10 @@ def test_writer_parse_output():
 This is the introduction [cite:id_1]. More text here [cite:id_2].
 </write>
 """
-    parsed2 = writer.parse_output(output2)
-    assert parsed2["action_type"] == "write"
-    assert "Introduction" in parsed2["action_content"]
-    assert "[cite:id_1]" in parsed2["action_content"]
+        parsed2 = writer.parse_output(output2)
+        assert parsed2["action_type"] == "write"
+        assert "Introduction" in parsed2["action_content"]
+        assert "[cite:id_1]" in parsed2["action_content"]
 
 
 def test_webweaver_agent_initialization():
@@ -150,13 +159,17 @@ def test_webweaver_agent_initialization():
         "generate_cfg": {"temperature": 0.1}
     }
 
-    agent = WebWeaverAgent(llm_config)
+    # Mock OpenAI client to avoid API key requirement
+    with pytest.MonkeyPatch().context() as m:
+        m.setenv("OPENAI_API_KEY", "test-key")
+        m.setenv("OPENAI_BASE_URL", "http://test")
+        agent = WebWeaverAgent(llm_config)
 
-    assert agent.memory_bank is not None
-    assert agent.planner is not None
-    assert agent.writer is not None
-    assert agent.memory_bank == agent.planner.memory_bank
-    assert agent.memory_bank == agent.writer.memory_bank
+        assert agent.memory_bank is not None
+        assert agent.planner is not None
+        assert agent.writer is not None
+        assert agent.memory_bank == agent.planner.memory_bank
+        assert agent.memory_bank == agent.writer.memory_bank
 
 
 if __name__ == "__main__":
