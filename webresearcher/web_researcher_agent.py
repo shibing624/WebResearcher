@@ -95,6 +95,7 @@ class WebResearcherAgent:
             self,
             llm_config: Optional[Dict] = None,
             function_list: Optional[List[str]] = None,
+            instruction: str = "",
     ):
         self.llm_generate_cfg = llm_config.get("generate_cfg", {})
         self.model = llm_config.get("model", "gpt-4o")  # 主模型
@@ -102,6 +103,7 @@ class WebResearcherAgent:
         self.llm_timeout = llm_config.get("llm_timeout", 300.0)
         self.agent_timeout = llm_config.get("agent_timeout", 600.0)
         self.function_list = function_list or list(TOOL_MAP.keys())
+        self.instruction = instruction or ""
 
     def parse_output(self, text: str) -> Dict[str, str]:
         """
@@ -295,7 +297,7 @@ class WebResearcherAgent:
 
         # 1. 初始化研究轮次
         research_round = ResearchRound(question=question)
-        system_prompt = get_iterresearch_system_prompt(today_date(), self.function_list)
+        system_prompt = get_iterresearch_system_prompt(today_date(), self.function_list, self.instruction)
 
         # 完整轨迹日志（用于调试）
         full_trajectory_log = []
@@ -329,12 +331,6 @@ class WebResearcherAgent:
 
                 full_trajectory_log.append({"role": "assistant", "content": content})
                 logger.debug(f'Round {round_num} LLM response received.')
-
-            except (APIError, APIConnectionError, APITimeoutError) as e:
-                logger.error(f"API Error: {e}")
-                prediction = f"Error: API Error {e}"
-                termination = 'api error'
-                break
             except Exception as e:
                 logger.error(f"Unknown Error: {e}")
                 prediction = f"Error: Unknown {e}"

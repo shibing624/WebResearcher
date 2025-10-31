@@ -213,7 +213,7 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
     Based on WebWeaver paper Section 3.2 and Appendix B.2.
     """
 
-    def __init__(self, llm_config: Dict, memory_bank: MemoryBank, function_list: Optional[List[str]] = None):
+    def __init__(self, llm_config: Dict, memory_bank: MemoryBank, function_list: Optional[List[str]] = None, instruction: str = ""):
         """
         Initialize Planner agent.
         
@@ -233,7 +233,7 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
 
         super().__init__(llm_config, tool_map)
         self.memory_bank = memory_bank
-        self.system_prompt = get_webweaver_planner_prompt(today_date(), self.function_list)
+        self.system_prompt = get_webweaver_planner_prompt(today_date(), self.function_list, instruction)
 
     def parse_output(self, text: str) -> Dict[str, str]:
         """
@@ -343,7 +343,7 @@ class WebWeaverWriter(BaseWebWeaverAgent):
     Based on WebWeaver paper Section 3.3 and Appendix B.3.
     """
 
-    def __init__(self, llm_config: Dict, memory_bank: MemoryBank):
+    def __init__(self, llm_config: Dict, memory_bank: MemoryBank, instruction: str = ""):
         """
         Initialize Writer agent.
         
@@ -358,7 +358,7 @@ class WebWeaverWriter(BaseWebWeaverAgent):
 
         super().__init__(llm_config, tool_map)
         self.memory_bank = memory_bank
-        self.system_prompt = get_webweaver_writer_prompt(today_date())
+        self.system_prompt = get_webweaver_writer_prompt(today_date(), instruction)
 
     def parse_output(self, text: str) -> Dict[str, str]:
         """
@@ -530,7 +530,7 @@ class WebWeaverAgent:
     Based on WebWeaver paper dual-agent framework.
     """
 
-    def __init__(self, llm_config: Optional[Dict] = None, function_list: Optional[List[str]] = None):
+    def __init__(self, llm_config: Optional[Dict] = None, function_list: Optional[List[str]] = None, instruction: str = ""):
         """
         Initialize WebWeaver agent.
         
@@ -551,8 +551,8 @@ class WebWeaverAgent:
         self.memory_bank = MemoryBank()
 
         # Initialize sub-agents
-        self.planner = WebWeaverPlanner(self.llm_config, self.memory_bank, function_list=function_list)
-        self.writer = WebWeaverWriter(self.llm_config, self.memory_bank)
+        self.planner = WebWeaverPlanner(self.llm_config, self.memory_bank, function_list=function_list, instruction=instruction)
+        self.writer = WebWeaverWriter(self.llm_config, self.memory_bank, instruction=instruction)
 
         logger.debug("WebWeaver Dual-Agent Framework initialized.")
         logger.debug(f"Planner Tools: {self.planner.function_list}")

@@ -62,16 +62,20 @@ def get_system_prompt(tools: list) -> str:
     return BASE_SYSTEM_PROMPT.format(tools_text=tools_text)
 
 
-def get_iterresearch_system_prompt(today: str, function_list: list) -> str:
+def get_iterresearch_system_prompt(today: str, function_list: list, instruction: str = "") -> str:
     """
     Generate system prompt for IterResearch paradigm.
     
     Requires LLM to generate <think>, <report>, and <tool_call>/<answer> in a single call.
     """
     tools_text = "\n".join(json.dumps(TOOL_DESCRIPTIONS[tool]) for tool in function_list if tool in TOOL_DESCRIPTIONS)
+    instruction_text = ""
+    if instruction:
+        instruction_text = f"\n\nAdditional persona instructions:\n{instruction}\n"
     
     ITERRESEARCH_PROMPT = f"""You are WebResearcher, an advanced AI research agent. 
 Today is {today}. Your goal is to answer the user's question with high accuracy and depth by iteratively searching the web and synthesizing information.
+{instruction_text}
 
 **IterResearch Core Loop:**
 You operate in a loop. In each round (Round i), you will be given the original "Question", your "Evolving Report" from the previous round (R_{{i-1}}), and the "Observation" from your last tool use (O_{{i-1}}).
@@ -152,7 +156,7 @@ EXTRACTOR_PROMPT = """Please process the following webpage content and user goal
 """
 
 
-def get_webweaver_planner_prompt(today: str, tool_list: List[str]) -> str:
+def get_webweaver_planner_prompt(today: str, tool_list: List[str], instruction: str = "") -> str:
     """
     Generate system prompt for WebWeaver Planner Agent.
     
@@ -167,7 +171,11 @@ def get_webweaver_planner_prompt(today: str, tool_list: List[str]) -> str:
         System prompt string for Planner
     """
     tool_list_str = ', '.join(tool_list)
+    instruction_text = ""
+    if instruction:
+        instruction_text = f"\n\nAdditional persona instructions:\n{instruction}\n"
     return f"""You are the Planner Agent for WebWeaver. Today is {today}. Your mission is to explore a research question and produce a comprehensive, citation-grounded OUTLINE.
+{instruction_text}
 
 You will store all evidence you find in a Memory Bank, which will assign it a citation ID.
 
@@ -226,7 +234,7 @@ The outline is complete with all necessary evidence.
 """
 
 
-def get_webweaver_writer_prompt(today: str) -> str:
+def get_webweaver_writer_prompt(today: str, instruction: str = "") -> str:
     """
     Generate system prompt for WebWeaver Writer Agent.
     
@@ -239,7 +247,11 @@ def get_webweaver_writer_prompt(today: str) -> str:
     Returns:
         System prompt string for Writer
     """
+    instruction_text = ""
+    if instruction:
+        instruction_text = f"\n\nAdditional persona instructions:\n{instruction}\n"
     return f"""You are the Writer Agent for WebWeaver. Today is {today}. Your job is to write a high-quality, comprehensive report based *only* on the [Final Outline] and the [Retrieved Evidence].
+{instruction_text}
 
 You operate in a ReAct (Think-Action-Observation) loop.
 You will be given the [Final Outline] and the [Report Written So Far].
