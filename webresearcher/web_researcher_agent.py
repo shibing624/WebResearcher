@@ -96,14 +96,23 @@ class WebResearcherAgent:
             llm_config: Optional[Dict] = None,
             function_list: Optional[List[str]] = None,
             instruction: str = "",
+            api_key: Optional[str] = None,
+            base_url: Optional[str] = None,
     ):
-        self.llm_generate_cfg = llm_config.get("generate_cfg", {})
-        self.model = llm_config.get("model", "gpt-4o")  # 主模型
-        self.openai_api_key = llm_config.get("openai_api_key", OPENAI_API_KEY)
-        self.openai_base_url = llm_config.get("openai_base_url", OPENAI_BASE_URL)
-        self.max_input_tokens = llm_config.get("max_input_tokens", 32000)
-        self.llm_timeout = llm_config.get("llm_timeout", 300.0)
-        self.agent_timeout = llm_config.get("agent_timeout", 600.0)
+        llm_config = dict(llm_config or {})
+        if api_key:
+            llm_config["openai_api_key"] = api_key
+        if base_url:
+            llm_config["openai_base_url"] = base_url
+
+        self.llm_config = llm_config
+        self.llm_generate_cfg = self.llm_config.get("generate_cfg", {})
+        self.model = self.llm_config.get("model", "gpt-4o")  # 主模型
+        self.openai_api_key = self.llm_config.get("openai_api_key", OPENAI_API_KEY)
+        self.openai_base_url = self.llm_config.get("openai_base_url", OPENAI_BASE_URL)
+        self.max_input_tokens = self.llm_config.get("max_input_tokens", 32000)
+        self.llm_timeout = self.llm_config.get("llm_timeout", 300.0)
+        self.agent_timeout = self.llm_config.get("agent_timeout", 600.0)
         self.function_list = function_list or list(TOOL_MAP.keys())
         self.instruction = instruction or ""
 

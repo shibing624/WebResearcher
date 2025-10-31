@@ -54,14 +54,17 @@ class BaseWebWeaverAgent:
             llm_config: LLM configuration dict
             tool_map: Dictionary mapping tool names to BaseTool instances
         """
-        self.llm_generate_cfg = llm_config.get("generate_cfg", {})
-        self.model = llm_config.get("model", "gpt-4o")
-        self.llm_timeout = llm_config.get("llm_timeout", 300.0)
+        self.llm_config = llm_config
+        self.llm_generate_cfg = self.llm_config.get("generate_cfg", {})
+        self.model = self.llm_config.get("model", "gpt-4o")
+        self.llm_timeout = self.llm_config.get("llm_timeout", 300.0)
         self.tool_map = tool_map
         self.function_list = list(tool_map.keys())
+        self.openai_api_key = self.llm_config.get("openai_api_key", OPENAI_API_KEY)
+        self.openai_base_url = self.llm_config.get("openai_base_url", OPENAI_BASE_URL)
         self.client = OpenAI(
-            api_key=OPENAI_API_KEY,
-            base_url=OPENAI_BASE_URL,
+            api_key=self.openai_api_key,
+            base_url=self.openai_base_url,
             timeout=self.llm_timeout,
         )
         # Cache for idempotent tool calls to avoid redundant executions (e.g., repeated retrieve on same IDs)
@@ -530,14 +533,21 @@ class WebWeaverAgent:
     Based on WebWeaver paper dual-agent framework.
     """
 
-    def __init__(self, llm_config: Optional[Dict] = None, function_list: Optional[List[str]] = None, instruction: str = ""):
+    def __init__(
+            self,
+            llm_config: Optional[Dict] = None,
+            function_list: Optional[List[str]] = None,
+            instruction: str = "",
+            api_key: Optional[str] = None,
+            base_url: Optional[str] = None,
+    ):
         """
         Initialize WebWeaver agent.
         
         Args:
             llm_config: LLM configuration dict
         """
-        self.llm_config = llm_config or {
+        base_config = llm_config or {
             "model": "gpt-4o",
             "generate_cfg": {
                 "temperature": 0.1,
@@ -546,6 +556,11 @@ class WebWeaverAgent:
             },
             "llm_timeout": 300.0,
         }
+        self.llm_config = dict(base_config)
+        if api_key:
+            self.llm_config["openai_api_key"] = api_key
+        if base_url:
+            self.llm_config["openai_base_url"] = base_url
         
         # Initialize shared memory bank
         self.memory_bank = MemoryBank()
