@@ -99,6 +99,8 @@ class WebResearcherAgent:
     ):
         self.llm_generate_cfg = llm_config.get("generate_cfg", {})
         self.model = llm_config.get("model", "gpt-4o")  # 主模型
+        self.openai_api_key = llm_config.get("openai_api_key", OPENAI_API_KEY)
+        self.openai_base_url = llm_config.get("openai_base_url", OPENAI_BASE_URL)
         self.max_input_tokens = llm_config.get("max_input_tokens", 32000)
         self.llm_timeout = llm_config.get("llm_timeout", 300.0)
         self.agent_timeout = llm_config.get("agent_timeout", 600.0)
@@ -154,8 +156,8 @@ class WebResearcherAgent:
                           max_tries: int = 1) -> str:
         """异步方法，并使用 run_in_executor 处理同步的 OpenAI 库"""
         client = OpenAI(
-            api_key=OPENAI_API_KEY,
-            base_url=OPENAI_BASE_URL,
+            api_key=self.openai_api_key,
+            base_url=self.openai_base_url,
             timeout=self.llm_timeout,
         )
 

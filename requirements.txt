@@ -4,6 +4,7 @@ tiktoken
 openai
 pydantic
 json5
+openpyxl
 pandas
 tabulate
 pillow
