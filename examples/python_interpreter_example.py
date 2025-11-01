@@ -9,6 +9,8 @@ Python Interpreter 使用示例
 """
 
 import os
+import sys
+sys.path.append("..")
 from webresearcher.tool_python import PythonInterpreter
 
 print("=" * 70)

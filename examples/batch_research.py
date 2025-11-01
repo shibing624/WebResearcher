@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 from dotenv import load_dotenv
 from loguru import logger
+import sys
+sys.path.append("..")
 
 load_dotenv()
 

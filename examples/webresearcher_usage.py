@@ -10,9 +10,10 @@ import asyncio
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+import sys
+sys.path.append("..")
 
+load_dotenv()
 from webresearcher import WebResearcherAgent
 from webresearcher import log
 

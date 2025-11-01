@@ -6,8 +6,9 @@
 import asyncio
 from dotenv import load_dotenv
 
+import sys
+sys.path.append("..")
 load_dotenv()
-
 from webresearcher import WebWeaverAgent, logger, set_log_level
 
 

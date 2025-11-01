@@ -9,7 +9,8 @@ with WebResearcher.
 import asyncio
 from typing import Dict
 from dotenv import load_dotenv
-
+import sys
+sys.path.append("..")
 load_dotenv()
 
 from webresearcher import WebResearcherAgent, BaseTool
