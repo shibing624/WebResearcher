@@ -97,7 +97,6 @@ class BaseWebWeaverAgent:
                     "stop": stop_sequences,
                     "temperature": self.llm_generate_cfg.get('temperature', 0.1),
                     "top_p": self.llm_generate_cfg.get('top_p', 0.95),
-                    "max_tokens": self.llm_generate_cfg.get('max_tokens', 10000),
                 }
                 model_thinking_type = self.llm_generate_cfg.get("model_thinking_type", "")
                 if model_thinking_type:
@@ -127,7 +126,7 @@ class BaseWebWeaverAgent:
 
             except (APIError, APIConnectionError, APITimeoutError) as e:
                 logger.warning(
-                    f"Attempt {attempt + 1} API error: {e}, base_url: {OPENAI_BASE_URL}, api_key: {OPENAI_API_KEY}, model: {self.model}")
+                    f"Attempt {attempt + 1} API error: {e}, base_url: {self.openai_base_url}, api_key: {self.openai_api_key}, model: {self.model}")
             except Exception as e:
                 logger.error(f"Attempt {attempt + 1} unexpected error: {e}")
 
@@ -301,6 +300,14 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
                 f"**IMPORTANT: When you write the outline using <write_outline>, "
                 f"you MUST use the SAME LANGUAGE as the [Question] above. Do NOT translate.**"
             )
+            # Final iteration: force LLM to output <write_outline> and avoid tool calls or terminate
+            is_last_iteration = (i == MAX_LLM_CALL_PER_RUN - 1)
+            if is_last_iteration:
+                context_str += (
+                    "\n[Final Instruction]\n"
+                    "This is your last allowed step. You MUST output <write_outline> with the complete final outline. "
+                    "Do NOT output <tool_call> or <terminate>."
+                )
             messages = [
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": context_str}
@@ -435,6 +442,14 @@ class WebWeaverWriter(BaseWebWeaverAgent):
                 f"in the SAME LANGUAGE as the [Question] and [Final Outline] above. "
                 f"Check the language carefully and DO NOT translate or switch languages.**"
             )
+            # Final iteration: force LLM to output <write> and avoid tool calls or terminate
+            is_last_iteration = (i == MAX_LLM_CALL_PER_RUN - 1)
+            if is_last_iteration:
+                context_str += (
+                    "\n[Final Instruction]\n"
+                    "This is your last allowed step. You MUST output <write> with a well-structured final section using the evidence you have. "
+                    "Do NOT output <tool_call> or <terminate>."
+                )
             messages = [
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": context_str}

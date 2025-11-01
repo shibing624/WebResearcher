@@ -114,7 +114,7 @@ class WebResearcherAgent:
         self.llm_timeout = self.llm_config.get("llm_timeout", 300.0)
         self.agent_timeout = self.llm_config.get("agent_timeout", 600.0)
         self.function_list = function_list or list(TOOL_MAP.keys())
-        self.instruction = instruction or ""
+        self.instruction = instruction
 
     def parse_output(self, text: str) -> Dict[str, str]:
         """
@@ -183,7 +183,6 @@ class WebResearcherAgent:
                     "stop": stop_sequences,
                     "temperature": self.llm_generate_cfg.get('temperature', 0.6),
                     "top_p": self.llm_generate_cfg.get('top_p', 0.95),
-                    "max_tokens": 10000,
                     "presence_penalty": self.llm_generate_cfg.get('presence_penalty', 1.1)
                 }
                 model_thinking_type = self.llm_generate_cfg.get("model_thinking_type", "")
@@ -213,7 +212,7 @@ class WebResearcherAgent:
 
             except (APIError, APIConnectionError, APITimeoutError) as e:
                 logger.warning(
-                    f"Attempt {attempt + 1} API error: {e}, base_url: {OPENAI_BASE_URL}, api_key: {OPENAI_API_KEY}, model: {self.model}")
+                    f"Attempt {attempt + 1} API error: {e}, base_url: {self.openai_base_url}, api_key: {self.openai_api_key}, model: {self.model}")
             except Exception as e:
                 logger.error(f"Attempt {attempt + 1} unexpected error: {e}")
 
@@ -338,7 +337,21 @@ class WebResearcherAgent:
             content = ''
             try:
                 logger.debug(f"Round {round_num}: Calling LLM. Remaining calls: {num_llm_calls_available}")
-                content = await self.call_server(current_context)
+
+                # If this is the last available LLM call, force final answer generation instead of further tool calls
+                is_last_call = (num_llm_calls_available == 0)
+                if is_last_call:
+                    finalize_instruction = (
+                        "You have reached the maximum allowed LLM calls for this run. "
+                        "Do not call tools anymore. Based on your current report and the information gathered so far, "
+                        "provide the final answer now in the three-part format: "
+                        "<think>...</think> <report>...</report> <answer>...</answer>"
+                    )
+                    request_msgs = current_context + [{"role": "user", "content": finalize_instruction}]
+                else:
+                    request_msgs = current_context
+
+                content = await self.call_server(request_msgs)
 
                 full_trajectory_log.append({"role": "assistant", "content": content})
                 logger.debug(f'Round {round_num} LLM response received.')
@@ -433,7 +446,7 @@ class WebResearcherAgent:
                     break
 
             # 5.4 Token 限制检查
-            token_count = self.count_tokens(current_context)
+            token_count = self.count_tokens(request_msgs if 'request_msgs' in locals() else current_context)
             logger.debug(f"Round {round_num} context token count: {token_count}")
             if token_count > self.max_input_tokens:
                 logger.warning(f"Token quantity exceeds the limit: {token_count}")
@@ -453,10 +466,12 @@ class WebResearcherAgent:
 
         # 循环结束后的收尾
         if not prediction:
-            prediction = 'No answer found.'
-            termination = 'answer not found'
             if num_llm_calls_available == 0:
+                prediction = 'No answer found (exceeded available LLM calls).'
                 termination = 'exceed available llm calls'
+            else:
+                prediction = 'No answer found.'
+                termination = 'answer not found'
 
         # 返回最终结果
         result = {
