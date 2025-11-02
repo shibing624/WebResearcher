@@ -152,7 +152,7 @@ async def main():
     await example_basic_research()
 
     # Example 2: Open-ended research question (new feature demonstration)
-    await example_open_ended_question()
+    # await example_open_ended_question()
 
     # Example 3: TTS mode (expensive - uncomment to use)
     # await example_tts_mode()
