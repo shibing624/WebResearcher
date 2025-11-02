@@ -118,11 +118,11 @@ class WebResearcherAgent:
 
     def parse_output(self, text: str) -> Dict[str, str]:
         """
-        解析 LLM 的单次输出，严格提取 <think>, <report>, 和 (<tool_call> 或 <answer>)。
+        解析 LLM 的单次输出，严格提取 <plan>, <report>, 和 (<tool_call> 或 <answer> 或 <terminate>)。
         这是 IterResearch 范式的核心：LLM 在单次调用中生成三段式输出。
         """
         output = {
-            "think": "",
+            "plan": "",
             "report": "",
             "tool_call": "",
             "answer": "",
@@ -130,46 +130,28 @@ class WebResearcherAgent:
             "terminate_reason": "",
         }
 
-        # 1. 提取 <think>
-        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
-        if think_match:
-            output["think"] = think_match.group(1).strip()
+        def _extract_last_block(pattern: str) -> str:
+            matches = re.findall(pattern, text, flags=re.DOTALL | re.MULTILINE)
+            for m in reversed(matches):
+                if m and m.strip():
+                    return m.strip()
+            return ""
+
+        # 1. 提取 <plan>
+        plan = _extract_last_block(r"^\s*<plan>(.*?)</plan>")
+        if plan:
+            output["plan"] = plan
 
         # 2. 提取 <report>
-        report_match = re.search(r'<report>(.*?)</report>', text, re.DOTALL)
-        if report_match:
-            output["report"] = report_match.group(1).strip()
+        output["report"] = _extract_last_block(r"^\s*<report>(.*?)</report>")
 
-        # 3. 提取 <tool_call> 或 <answer>
-        tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL | re.IGNORECASE)
-        answer_matches = re.findall(r'<answer\b[^>]*>(.*?)</answer>', text, re.DOTALL | re.IGNORECASE)
-        terminate_match = re.search(r'<terminate\b[^>]*(?:/>|>(.*?)</terminate>)', text, re.DOTALL | re.IGNORECASE)
-
-        answer_str = None
-        if answer_matches:
-            joined_answers = "\n".join(
-                match.strip()
-                for match in answer_matches
-                if match is not None and match.strip()
-            )
-            answer_str = joined_answers.strip() if joined_answers else None
-
-        if tool_call_match:
-            tool_call_content = tool_call_match.group(1).strip()
-            # 处理 Python 代码块的特殊格式
-            if "python\n<code>" in tool_call_content or "<code>" in tool_call_content:
-                output["tool_call"] = tool_call_content
-            else:
-                output["tool_call"] = tool_call_content
-
-        if answer_str:
-            output["answer"] = answer_str
-
-        if terminate_match:
+        # 3. 提取 <tool_call>、<answer>、<terminate>
+        output["tool_call"] = _extract_last_block(r"^\s*<tool_call>(.*?)</tool_call>")
+        output["answer"] = _extract_last_block(r"^\s*<answer>(.*?)</answer>")
+        term_body = _extract_last_block(r"^\s*<terminate>(.*?)</terminate>")
+        if term_body != "":
             output["terminate"] = True
-            terminate_body = terminate_match.group(1)
-            if terminate_body:
-                output["terminate_reason"] = terminate_body.strip()
+            output["terminate_reason"] = term_body
 
         if not output["tool_call"] and not output["answer"] and not output["terminate"]:
             logger.warning("LLM output did not contain <tool_call>, <answer>, or <terminate> tag.")
@@ -218,8 +200,7 @@ class WebResearcherAgent:
                 if hasattr(chat_response.choices[0].message, 'reasoning_content') and chat_response.choices[
                     0].message.reasoning_content:
                     reasoning_content = chat_response.choices[0].message.reasoning_content
-                    content = f"<reasoning>{reasoning_content}</reasoning>\n{content}"
-                # logger.debug(f"input messages: {msgs}, \nLLM Response: {content}")
+                logger.debug(f"input messages: {msgs}, \nreasoning_content: {reasoning_content}, \nLLM Response: {content}")
                 if content and content.strip():
                     return content.strip()
                 else:
@@ -309,7 +290,7 @@ class WebResearcherAgent:
         
         循环如下:
         s_t = (Q, R_{i-1}, O_{i-1})
-        LLM(s_t) -> (Think_i, Report_i, Action_i)
+        LLM(s_t) -> (Plan_i, Report_i, Action_i)
         
         if Action_i == <answer>:
             STOP
@@ -348,7 +329,7 @@ class WebResearcherAgent:
             if round_num == 1:
                 full_trajectory_log.extend(current_context)  # 仅记录初始上下文
 
-            # 3. 单次 LLM 调用 (生成 T_i, R_i, A_i)
+            # 3. 单次 LLM 调用 (生成 P_i, R_i, A_i)
             content = ''
             try:
                 logger.debug(f"Round {round_num}: Calling LLM. Remaining calls: {num_llm_calls_available}")
@@ -360,7 +341,7 @@ class WebResearcherAgent:
                         "You have reached the maximum allowed LLM calls for this run. "
                         "Do not call tools anymore. Based on your current report and the information gathered so far, "
                         "provide the final answer now in the three-part format: "
-                        "<think>...</think> <report>...</report> <answer>...</answer>"
+                        "<plan>...</plan> <report>...</report> <answer>...</answer>"
                     )
                     request_msgs = current_context + [{"role": "user", "content": finalize_instruction}]
                 else:
@@ -376,16 +357,16 @@ class WebResearcherAgent:
                 termination = 'unknown error'
                 break
 
-            # 4. 解析 LLM 的结构化输出 (T_i, R_i, A_i / Answer_i)
+            # 4. 解析 LLM 的结构化输出 (P_i, R_i, A_i / Answer_i)
             parsed = self.parse_output(content)
-            think_content = parsed["think"]
+            plan_content = parsed["plan"]
             report_content = parsed["report"]
             action_content = parsed["tool_call"]
             answer_content = parsed["answer"]
             terminate_flag = parsed.get("terminate", False)
             terminate_reason = parsed.get("terminate_reason", "").strip()
 
-            logger.debug(f"Round {round_num} - Think: {think_content}")
+            logger.debug(f"Round {round_num} - Plan: {plan_content}")
             logger.debug(f"Round {round_num} - Report: {report_content}")
             logger.debug(f"Round {round_num} - Action: {action_content}")
             logger.debug(f"Round {round_num} - Answer: {answer_content}")
@@ -457,7 +438,7 @@ class WebResearcherAgent:
                         "You did not provide a valid response format. "
                         "Based on your current report and the information gathered so far, "
                         "please provide the final answer to the original question. "
-                        "Use the three-part format: <think>...</think> <report>...</report> <answer>...</answer>"
+                        "Use the three-part format: <plan>...</plan> <report>...</report> <answer>...</answer>"
                     )}
                 ]
 
@@ -491,7 +472,7 @@ class WebResearcherAgent:
                     {"role": "user", "content": "You have now reached the maximum context length. "
                                                 "Stop making tool calls. Based on your research report, "
                                                 "provide the final answer in the three-part format: "
-                                                "<think>...</think> <report>...</report> <answer>...</answer>"}
+                                                "<plan>...</plan> <report>...</report> <answer>...</answer>"}
                 ]
                 content = await self.call_server(force_answer_msgs)
                 parsed = self.parse_output(content)

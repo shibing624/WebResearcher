@@ -25,10 +25,10 @@ def test_agent_parse_output_answer():
     }
     agent = WebResearcherAgent(llm_config=llm_config)
 
-    text = "<think>Reasoning here</think>\n<answer>Final answer</answer>"
+    text = "<plan>Reasoning here</plan>\n<answer>Final answer</answer>"
     parsed = agent.parse_output(text)
 
-    assert parsed["think"] == "Reasoning here"
+    assert parsed["plan"] == "Reasoning here"
     assert parsed["answer"] == "Final answer"
     assert parsed["tool_call"] == ''
 
@@ -41,26 +41,26 @@ def test_agent_parse_output_tool_call():
     }
     agent = WebResearcherAgent(llm_config=llm_config)
 
-    text = '<think>Need to search</think>\n<tool_call>{"name": "search", "arguments": {"query": "test"}}</tool_call>'
+    text = '<plan>Need to search</plan>\n<tool_call>{"name": "search", "arguments": {"query": "test"}}</tool_call>'
     parsed = agent.parse_output(text)
 
-    assert parsed["think"] == "Need to search"
+    assert parsed["plan"] == "Need to search"
     assert parsed["tool_call"] is not None
     assert "search" in parsed["tool_call"]
     assert parsed["answer"] == ''
 
 
 def test_agent_parse_output_nested_answer():
-    """Test parsing nested answer (answer inside think)"""
+    """Test parsing nested answer (answer inside plan)"""
     llm_config = {
         "model": "gpt-4o",
         "generate_cfg": {"temperature": 0.6}
     }
     agent = WebResearcherAgent(llm_config=llm_config)
 
-    # Case where answer appears after think
-    text = "<think>Reasoning</think>\n<answer>Final answer</answer>"
+    # Case where answer appears after plan
+    text = "<plan>Reasoning</plan>\n<answer>Final answer</answer>"
     parsed = agent.parse_output(text)
 
     assert parsed["answer"] == "Final answer"
-    assert parsed["think"] == "Reasoning"
+    assert parsed["plan"] == "Reasoning"

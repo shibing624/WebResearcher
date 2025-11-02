@@ -66,7 +66,7 @@ def get_iterresearch_system_prompt(today: str, function_list: list, instruction:
     """
     Generate system prompt for IterResearch paradigm.
     
-    Requires LLM to generate <think>, <report>, and <tool_call>/<answer> in a single call.
+    Requires LLM to generate <plan>, <report>, and <tool_call>/<answer> in a single call. Compatible with legacy <think> but prefer <plan>.
     """
     tools_text = "\n".join(json.dumps(TOOL_DESCRIPTIONS[tool]) for tool in function_list if tool in TOOL_DESCRIPTIONS)
     instruction_text = ""
@@ -80,13 +80,13 @@ Today is {today}. Your goal is to answer the user's question with high accuracy 
 **IterResearch Core Loop:**
 You operate in a loop. In each round (Round i), you will be given the original "Question", your "Evolving Report" from the previous round (R_{{i-1}}), and the "Observation" from your last tool use (O_{{i-1}}).
 
-Your task in a single turn is to generate a structured response containing three parts in this exact order: <think>, <report>, and <tool_call> (or <answer>).
+Your task in a single turn is to generate a structured response containing three parts in this exact order: <plan>, <report>, and <tool_call> (or <answer> or <terminate>).
 
-**1. `<think>` Block (Cognitive Scratchpad):**
+**1. `<plan>` Block (Cognitive Scratchpad):**
    - First, analyze the Question, the current Report (R_{{i-1}}), and the latest Observation (O_{{i-1}}).
    - Critically evaluate: Is the information sufficient? Are there gaps, contradictions, or new leads?
    - Formulate a plan for the *current* round. What do you need to do *now*?
-   - This block is your private thought process.
+   - This block is your private thought process, but should be expressed as an external plan. 
 
 **2. `<report>` Block (Evolving Central Memory):**
    - **Crucially**, you must update your research report (R_i).
@@ -97,7 +97,7 @@ Your task in a single turn is to generate a structured response containing three
    - This block will be the *only* memory (besides the original question) carried forward to the next round.
 
 **3. `<tool_call>`, `<answer>`, or `<terminate>` Block (Action):**
-   - Based on your `<think>` process and your *newly updated* `<report>`, decide the next step.
+   - Based on your `<plan>` and your *newly updated* `<report>`, decide the next step.
    - **If more research is needed:**
      - Choose one of the available tools.
      - Output a *single* `<tool_call>` block with the JSON for that tool.
@@ -112,11 +112,11 @@ Your task in a single turn is to generate a structured response containing three
 
 **Output Format (Strict):**
 Your response *must* follow this exact structure:
-<think>
+<plan>
 Your detailed analysis and plan for this round.
-</think>
+</plan>
 <report>
-The *new*, updated, and synthesized report (R_i), integrating the latest observation.
+The *new*, updated, and synthesized report (R_i), integrating the latest observation. Same language as the question.
 </report>
 <tool_call>
 {{"name": "tool_to_use", "arguments": {{"arg1": "value1", ...}}}}
@@ -124,11 +124,11 @@ The *new*, updated, and synthesized report (R_i), integrating the latest observa
 
 *OR, if the answer is ready:*
 
-<think>
+<plan>
 Your reasoning for why the answer is complete.
-</think>
+</plan>
 <report>
-The final, complete report that supports the answer.
+The final, complete report that supports the answer. Same language as the question.
 </report>
 <answer>
 The final, comprehensive answer to the user's question. Same language as the question.
@@ -136,11 +136,11 @@ The final, comprehensive answer to the user's question. Same language as the que
 
 *OR, if the report already contains the final answer and you are ready to stop without repeating it:*
 
-<think>
+<plan>
 Your reasoning for why no further actions or answers are needed.
-</think>
+</plan>
 <report>
-The final, complete report that should be delivered to the user.
+The final, complete report that should be delivered to the user. Same language as the question.
 </report>
 <terminate>
 Optional: brief note explaining the stop condition.
@@ -195,7 +195,7 @@ def get_webweaver_planner_prompt(today: str, tool_list: List[str], instruction: 
 
 You will store all evidence you find in a Memory Bank, which will assign it a citation ID.
 
-You operate in a ReAct (Think-Action-Observation) loop.
+You operate in a ReAct (Plan-Action-Observation) loop.
 In each step, you will be given the [Question], your [Current Outline], and the [Last Observation].
 
 Your goal is to iteratively refine the [Current Outline] by taking one of three actions:
@@ -222,30 +222,30 @@ Your goal is to iteratively refine the [Current Outline] by taking one of three 
     - Format: <terminate>
 
 **STRICT Response Format:**
-You must respond *only* with a `<think>` block followed by *one* action block (`<tool_call>`, `<write_outline>`, or `<terminate>`).
+You must respond *only* with a `<plan>` block followed by *one* action block (`<tool_call>`, `<write_outline>`, or `<terminate>`).
 
 Example:
-<think>
+<plan>
 Your analysis of the current state and your plan for the next action.
-</think>
+</plan>
 <tool_call>
 {{"name": "search", "arguments": {{"query": ["search term1", "search term2"]}}}}
 </tool_call>
 
 *OR*
 
-<think>
+<plan>
 Your analysis of the new evidence and how you will update the outline.
-</think>
+</plan>
 <write_outline>
 The new, complete, citation-grounded outline. **MUST use the same language as the [Question].**
 </write_outline>
 
 *OR*
 
-<think>
+<plan>
 The outline is complete with all necessary evidence.
-</think>
+</plan>
 <terminate>
 """
 
@@ -269,15 +269,15 @@ def get_webweaver_writer_prompt(today: str, instruction: str = "") -> str:
     return f"""You are the Writer Agent for WebWeaver. Today is {today}. Your job is to write a high-quality, comprehensive report based *only* on the [Final Outline] and the [Retrieved Evidence].
 {instruction_text}
 
-You operate in a ReAct (Think-Action-Observation) loop.
+You operate in a ReAct (Plan-Action-Observation) loop.
 You will be given the [Final Outline] and the [Report Written So Far].
 
 Your goal is to write the report section by section, following the outline.
 
-1.  `<think>`: Analyze which section of the outline you need to write next.
+1.  `<plan>`: Analyze which section of the outline you need to write next.
     - Look at the [Final Outline] and the [Report Written So Far] to see what's missing.
     - Formulate a plan.
-    - Format: <think>...</think>
+    - Format: <plan>...</plan>
 
 2.  `<tool_call>` (Action: `retrieve`):
     - Based on your thought, identify the citation IDs (e.g., "id_1", "id_2") needed for the *next* section.
@@ -287,7 +287,7 @@ Your goal is to write the report section by section, following the outline.
 3.  `<tool_response>` (Observation):
     - The environment will return the evidence you requested.
 
-4.  `<think>`:
+4.  `<plan>`:
     - Analyze the [Retrieved Evidence].
     - Plan the prose for the section, making sure to use the evidence and citations correctly.
 
@@ -311,24 +311,24 @@ Text content here [cite:id_1]. More content [cite:id_2].
 
 **STRICT Response Format:**
 Your response *must* follow the Think-Action loop.
-- First, you *must* Think, then `retrieve`.
-- After you get the Observation (evidence), you *must* Think, then `write`.
+- First, you *must* Plan, then `retrieve`.
+- After you get the Observation (evidence), you *must* Plan, then `write`.
 - Repeat this for all sections.
 - Finally, `terminate`.
 
 Example:
-<think>
+<plan>
 I need to write section 1.1. Let me retrieve the evidence for it.
-</think>
+</plan>
 <tool_call>
 {{"name": "retrieve", "arguments": {{"citation_ids": ["id_1", "id_2"]}}}}
 </tool_call>
 
 (After observation)
 
-<think>
+<plan>
 Now I have the evidence, I'll write section 1.1 in the same language as the question.
-</think>
+</plan>
 <write>
 ## 1.1 Background
 The background shows... [cite:id_1]. Furthermore... [cite:id_2].

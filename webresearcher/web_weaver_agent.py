@@ -117,8 +117,7 @@ class BaseWebWeaverAgent:
                 if hasattr(chat_response.choices[0].message, 'reasoning_content') and chat_response.choices[
                     0].message.reasoning_content:
                     reasoning_content = chat_response.choices[0].message.reasoning_content
-                    content = f"<reasoning>{reasoning_content}</reasoning>\n{content}"
-                # logger.debug(f"input messages: {msgs}, \nLLM Response: {content}")
+                logger.debug(f"input messages: {msgs}, \nreasoning_content: {reasoning_content}, \nLLM Response: {content}")
                 if content and content.strip():
                     return content.strip()
                 else:
@@ -239,7 +238,7 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
 
     def parse_output(self, text: str) -> Dict[str, str]:
         """
-        Parse Planner's output: <think> and (<tool_call> | <write_outline> | <terminate>).
+        Parse Planner's output: <plan> and (<tool_call> | <write_outline> | <terminate>).
         
         Args:
             text: Raw LLM output
@@ -247,8 +246,8 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
         Returns:
             Dict with 'think', 'action_type', and 'action_content'
         """
-        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
-        think = think_match.group(1).strip() if think_match else ""
+        plan_match = re.search(r'<plan>(.*?)</plan>', text, re.DOTALL)
+        plan = plan_match.group(1).strip() if plan_match else ""
 
         tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL)
         write_outline_match = re.search(r'<write_outline>(.*?)</write_outline>', text, re.DOTALL)
@@ -271,7 +270,7 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
             logger.warning(f"Planner output parsing error: {action_content}")
 
         return {
-            "think": think,
+            "plan": plan,
             "action_type": action_type,
             "action_content": action_content
         }
@@ -372,16 +371,16 @@ class WebWeaverWriter(BaseWebWeaverAgent):
 
     def parse_output(self, text: str) -> Dict[str, str]:
         """
-        Parse Writer's output: <think> and (<tool_call> | <write> | <terminate>).
+        Parse Writer's output: <plan> and (<tool_call> | <write> | <terminate>).
         
         Args:
             text: Raw LLM output
             
         Returns:
-            Dict with 'think', 'action_type', and 'action_content'
+            Dict with 'plan', 'action_type', and 'action_content'
         """
-        think_match = re.search(r'<think>(.*?)</think>', text, re.DOTALL)
-        think = think_match.group(1).strip() if think_match else ""
+        plan_match = re.search(r'<plan>(.*?)</plan>', text, re.DOTALL)
+        plan = plan_match.group(1).strip() if plan_match else ""
 
         tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL)
         write_match = re.search(r'<write>(.*?)</write>', text, re.DOTALL)
@@ -404,7 +403,7 @@ class WebWeaverWriter(BaseWebWeaverAgent):
             logger.warning(f"Writer output parsing error: {action_content}")
 
         return {
-            "think": think,
+            "plan": plan,
             "action_type": action_type,
             "action_content": action_content
         }

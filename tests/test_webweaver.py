@@ -81,7 +81,7 @@ def test_planner_parse_output():
 
         # Test tool_call parsing
         output1 = """
-<think>I need to search for information</think>
+<plan>I need to search for information</plan>
 <tool_call>
 {"name": "search", "arguments": {"query": ["test query"]}}
 </tool_call>
@@ -89,11 +89,11 @@ def test_planner_parse_output():
         parsed1 = planner.parse_output(output1)
         assert parsed1["action_type"] == "tool_call"
         assert "search" in parsed1["action_content"]
-        assert "I need to search" in parsed1["think"]
+        assert "I need to search" in parsed1["plan"]
 
         # Test write_outline parsing
         output2 = """
-<think>Now I'll create the outline</think>
+<plan>Now I'll create the outline</plan>
 <write_outline>
 1. Introduction <citation>id_1</citation>
 2. Methods <citation>id_2</citation>
@@ -105,7 +105,7 @@ def test_planner_parse_output():
 
         # Test terminate parsing
         output3 = """
-<think>The outline is complete</think>
+<plan>The outline is complete</plan>
 <terminate>
 """
         parsed3 = planner.parse_output(output3)
@@ -128,7 +128,7 @@ def test_writer_parse_output():
 
         # Test retrieve parsing
         output1 = """
-<think>I need to retrieve evidence</think>
+<plan>I need to retrieve evidence</plan>
 <tool_call>
 {"name": "retrieve", "arguments": {"citation_ids": ["id_1"]}}
 </tool_call>
@@ -139,7 +139,7 @@ def test_writer_parse_output():
 
         # Test write parsing
         output2 = """
-<think>Now I'll write the section</think>
+<plan>Now I'll write the section</plan>
 <write>
 ## Introduction
 
