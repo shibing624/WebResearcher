@@ -125,7 +125,9 @@ class WebResearcherAgent:
             "think": "",
             "report": "",
             "tool_call": "",
-            "answer": ""
+            "answer": "",
+            "terminate": False,
+            "terminate_reason": "",
         }
 
         # 1. 提取 <think>
@@ -139,13 +141,18 @@ class WebResearcherAgent:
             output["report"] = report_match.group(1).strip()
 
         # 3. 提取 <tool_call> 或 <answer>
-        tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL)
-        answer_matches = re.findall(r'<answer>(.*?)</answer>', text, re.DOTALL)
+        tool_call_match = re.search(r'<tool_call>(.*?)</tool_call>', text, re.DOTALL | re.IGNORECASE)
+        answer_matches = re.findall(r'<answer\b[^>]*>(.*?)</answer>', text, re.DOTALL | re.IGNORECASE)
+        terminate_match = re.search(r'<terminate\b[^>]*(?:/>|>(.*?)</terminate>)', text, re.DOTALL | re.IGNORECASE)
+
+        answer_str = None
         if answer_matches:
-            answer_str = "\n".join([match.strip() for match in answer_matches if match.strip()])
-            answer_str = answer_str.strip()
-        else:
-            answer_str = None
+            joined_answers = "\n".join(
+                match.strip()
+                for match in answer_matches
+                if match is not None and match.strip()
+            )
+            answer_str = joined_answers.strip() if joined_answers else None
 
         if tool_call_match:
             tool_call_content = tool_call_match.group(1).strip()
@@ -154,10 +161,18 @@ class WebResearcherAgent:
                 output["tool_call"] = tool_call_content
             else:
                 output["tool_call"] = tool_call_content
-        elif answer_str:
+
+        if answer_str:
             output["answer"] = answer_str
-        else:
-            logger.warning("LLM output did not contain <tool_call> or <answer> tag.")
+
+        if terminate_match:
+            output["terminate"] = True
+            terminate_body = terminate_match.group(1)
+            if terminate_body:
+                output["terminate_reason"] = terminate_body.strip()
+
+        if not output["tool_call"] and not output["answer"] and not output["terminate"]:
+            logger.warning("LLM output did not contain <tool_call>, <answer>, or <terminate> tag.")
 
         return output
 
@@ -367,11 +382,15 @@ class WebResearcherAgent:
             report_content = parsed["report"]
             action_content = parsed["tool_call"]
             answer_content = parsed["answer"]
+            terminate_flag = parsed.get("terminate", False)
+            terminate_reason = parsed.get("terminate_reason", "").strip()
 
             logger.debug(f"Round {round_num} - Think: {think_content}")
             logger.debug(f"Round {round_num} - Report: {report_content}")
             logger.debug(f"Round {round_num} - Action: {action_content}")
             logger.debug(f"Round {round_num} - Answer: {answer_content}")
+            if terminate_flag:
+                logger.debug(f"Round {round_num} - Terminate signaled. Reason: {terminate_reason}")
 
             # 5. 状态更新 (s_t -> s_{t+1})
 
@@ -388,7 +407,24 @@ class WebResearcherAgent:
             if answer_content:
                 prediction = answer_content
                 termination = 'answer found'
+                if terminate_flag:
+                    termination = 'terminate with answer'
                 logger.debug(f"Round {round_num}: LLM provided <answer>. Terminating loop.")
+                break
+            if terminate_flag:
+                if terminate_reason:
+                    prediction = terminate_reason
+                else:
+                    prediction = research_round.current_report.strip()
+                termination = 'terminated by llm'
+                logger.debug(f"Round {round_num}: LLM signaled <terminate>. Final response prepared.")
+                break
+            if 'is_last_call' in locals() and is_last_call:
+                fallback_report = research_round.current_report.strip()
+                fallback_source = fallback_report or terminate_reason
+                prediction = fallback_source if fallback_source else research_round.last_observation
+                termination = 'finalized without answer tag'
+                logger.warning("Last LLM call did not return <answer> or <terminate>. Promoting accumulated content as final answer.")
                 break
 
             # 5.3 执行 Action (A_i)
@@ -466,7 +502,12 @@ class WebResearcherAgent:
 
         # 循环结束后的收尾
         if not prediction:
-            if num_llm_calls_available == 0:
+            fallback_report = research_round.current_report.strip()
+            if fallback_report:
+                prediction = fallback_report
+                if not termination:
+                    termination = 'report fallback'
+            elif num_llm_calls_available == 0:
                 prediction = 'No answer found (exceeded available LLM calls).'
                 termination = 'exceed available llm calls'
             else:

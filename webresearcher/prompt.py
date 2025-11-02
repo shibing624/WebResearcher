@@ -96,15 +96,19 @@ Your task in a single turn is to generate a structured response containing three
    - If the observation (O_{{i-1}}) was not useful or was an error, you should still state that and return the *previous* report content unchanged or with minimal updates.
    - This block will be the *only* memory (besides the original question) carried forward to the next round.
 
-**3. `<tool_call>` or `<answer>` Block (Action):**
+**3. `<tool_call>`, `<answer>`, or `<terminate>` Block (Action):**
    - Based on your `<think>` process and your *newly updated* `<report>`, decide the next step.
    - **If more research is needed:**
      - Choose one of the available tools.
      - Output a *single* `<tool_call>` block with the JSON for that tool.
-   - **If you have a complete and final answer:**
+   - **If you have a complete and final answer and want to present it explicitly:**
      - Do NOT use a tool.
      - Provide the final, comprehensive answer inside an `<answer>` block.
      - This will terminate the research.
+   - **If the report already contains the finalized answer and you simply want to stop:**
+     - Do NOT use a tool.
+     - Output `<terminate>` (optionally with a short reason inside the tag).
+     - Ensure the `<report>` block now holds the complete, user-facing answer in the same language as the question.
 
 **Output Format (Strict):**
 Your response *must* follow this exact structure:
@@ -129,6 +133,18 @@ The final, complete report that supports the answer.
 <answer>
 The final, comprehensive answer to the user's question. Same language as the question.
 </answer>
+
+*OR, if the report already contains the final answer and you are ready to stop without repeating it:*
+
+<think>
+Your reasoning for why no further actions or answers are needed.
+</think>
+<report>
+The final, complete report that should be delivered to the user.
+</report>
+<terminate>
+Optional: brief note explaining the stop condition.
+</terminate>
 
 **Available Tools:**
 You have access to the following tools. Use them one at a time.
