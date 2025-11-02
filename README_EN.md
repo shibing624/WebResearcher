@@ -43,14 +43,14 @@ Current open-source research agents rely on **mono-contextual, linear accumulati
 
 WebResearcher implements the **IterResearch paradigm**, where each round involves a **single LLM call** that simultaneously generates:
 
-- **Think**: Internal reasoning and analysis
+- **Plan**: Internal reasoning and analysis
 - **Report**: Updated research summary synthesizing all findings so far
 - **Action**: Tool call or final answer
 
-This **one-step approach** (vs. traditional two-step "think→act→synthesize") delivers:
+This **one-step approach** (vs. traditional two-step "plan→act→synthesize") delivers:
 - ⚡ **50% faster** - One LLM call per round instead of two
 - 💰 **40% cheaper** - Reduced token usage
-- 🧠 **Better reasoning** - Think, Report, and Action generated in unified context
+- 🧠 **Better reasoning** - Plan, Report, and Action generated in unified context
 
 This enables **unbounded research depth** while maintaining a lean, focused cognitive workspace.
 
@@ -74,7 +74,7 @@ Round i:
                           ↓
 ┌─────────────────────────────────────────────────────────┐
 │  Single LLM Call → Generates All Three:                  │
-│  ├─ <think>: Analyze current state                       │
+│  ├─ <plan>: Analyze current state                       │
 │  ├─ <report>: Updated synthesis of all findings          │
 │  └─ <tool_call> or <answer>: Next action                 │
 └─────────────────────────────────────────────────────────┘

@@ -244,7 +244,7 @@ class WebWeaverPlanner(BaseWebWeaverAgent):
             text: Raw LLM output
             
         Returns:
-            Dict with 'think', 'action_type', and 'action_content'
+            Dict with 'plan', 'action_type', and 'action_content'
         """
         plan_match = re.search(r'<plan>(.*?)</plan>', text, re.DOTALL)
         plan = plan_match.group(1).strip() if plan_match else ""

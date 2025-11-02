@@ -43,7 +43,7 @@ class TestTimeScalingAgent:
     synthesizes their findings into a final answer.
     
     Each parallel agent follows the IterResearch paradigm (single LLM call per round
-    generating Think + Report + Action), ensuring efficient and coherent research.
+    generating Plan + Report + Action), ensuring efficient and coherent research.
     
     This is analogous to:
     - Self-Consistency sampling in chain-of-thought

@@ -66,7 +66,7 @@ def get_iterresearch_system_prompt(today: str, function_list: list, instruction:
     """
     Generate system prompt for IterResearch paradigm.
     
-    Requires LLM to generate <plan>, <report>, and <tool_call>/<answer> in a single call. Compatible with legacy <think> but prefer <plan>.
+    Requires LLM to generate <plan>, <report>, and <tool_call>/<answer> in a single call. 
     """
     tools_text = "\n".join(json.dumps(TOOL_DESCRIPTIONS[tool]) for tool in function_list if tool in TOOL_DESCRIPTIONS)
     instruction_text = ""
@@ -310,7 +310,7 @@ Text content here [cite:id_1]. More content [cite:id_2].
 **The entire report MUST be in the SAME LANGUAGE as the [Question] and [Final Outline]. This is MANDATORY. Do NOT translate or switch languages.**
 
 **STRICT Response Format:**
-Your response *must* follow the Think-Action loop.
+Your response *must* follow the Plan-Action loop.
 - First, you *must* Plan, then `retrieve`.
 - After you get the Observation (evidence), you *must* Plan, then `write`.
 - Repeat this for all sections.

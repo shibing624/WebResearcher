@@ -84,7 +84,7 @@ class WebResearcherAgent:
     
     The IterResearch paradigm uses a cyclical process of:
     1. Workspace (question + previous report + last tool result)
-    2. Think-Action (LLM generates reasoning and action)
+    2. Plan-Action (LLM generates plan and action)
     3. Tool Execution (execute the tool and get result)
     4. Synthesis (update report by integrating new information)
     
