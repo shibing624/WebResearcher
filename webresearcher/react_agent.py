@@ -252,6 +252,12 @@ class ReactAgent:
                     "termination": "terminated without answer",
                     "trajectory": messages,
                 }
+            
+            # If no termination, prompt the agent to continue or provide final answer
+            messages.append({
+                "role": "user",
+                "content": "Please continue your analysis or provide the final answer using <answer> tags."
+            })
 
             # last round fallback: ask explicitly for final answer
             if remaining == 0:
