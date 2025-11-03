@@ -145,6 +145,40 @@ async def main():
 asyncio.run(main())
 ```
 
+### Multi-Turn ReAct：ReactAgent
+
+如果你更偏好接近 ReAct 论文的多轮对话实现，本项目提供了 `ReactAgent`。
+
+使用示例：
+
+```python
+import asyncio
+from webresearcher.react_agent import ReactAgent
+
+llm_config = {
+    "model": "gpt-4o",
+    "generate_cfg": {"temperature": 0.6}
+}
+
+agent = ReactAgent(
+    llm_config=llm_config,
+    function_list=["search", "google_scholar", "visit", "python"]
+)
+
+async def main():
+    result = await agent.run("2024 年巴黎的人口是多少？请给出平方根。")
+    # 返回结构包含：question / prediction / termination / trajectory
+    print(result["prediction"])  # 始终为非空字符串
+
+asyncio.run(main())
+```
+
+日志中的消息轨迹（`trajectory`）示意：
+- system：系统提示
+- user：原始问题
+- user：合并后的工具调用与返回（`<tool_call>... </tool_call>` + `OBS_START<tool_response>...</tool_response>OBS_END` 结果）
+- assistant：模型继续推理或给出 `<answer>` 最终答案
+
 ## 📚 高级用法
 
 ### 测试时扩展 (TTS)
@@ -270,6 +304,7 @@ result = await agent.run("你的问题")
 - ✅ **无界深度**: 几乎无限的研究轮次
 - ✅ **智能 Token 管理**: 自动上下文修剪和压缩
 - ✅ **异步支持**: 非阻塞 I/O 提升性能
+- ✅ **强制最终回答（ReactAgent）**: 在配额耗尽/超时时保证产出非空答案
 
 ### 工具特性
 

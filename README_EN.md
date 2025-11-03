@@ -144,6 +144,40 @@ async def main():
 asyncio.run(main())
 ```
 
+### Multi-Turn ReAct: ReactAgent
+
+If you prefer a multi-turn dialog implementation closer to the ReAct paper, this project provides a `ReactAgent`.
+
+Usage example:
+
+```python
+import asyncio
+from webresearcher.react_agent import ReactAgent
+
+llm_config = {
+    "model": "gpt-4o",
+    "generate_cfg": {"temperature": 0.6}
+}
+
+agent = ReactAgent(
+    llm_config=llm_config,
+    function_list=["search", "google_scholar", "visit", "python"]
+)
+
+async def main():
+    result = await agent.run("What is the population of Paris in 2024? Also compute its square root.")
+    # Result dict includes: question / prediction / termination / trajectory
+    print(result["prediction"])  # Always non-empty
+
+asyncio.run(main())
+```
+
+Message trajectory illustration (for logging/inspection):
+- system: system prompt
+- user: original question
+- user: merged tool interaction (`<tool_call>...</tool_call>` + `OBS_START/OBS_END` tool output)
+- assistant: model proceeds or emits final `<answer>`
+
 ## 📚 Advanced Usage
 
 ### Test-Time Scaling (TTS)
@@ -271,6 +305,7 @@ See  [logger.py](https://github.com/shibing624/WebResearcher/blob/main/webresear
 - ✅ **Robust Error Handling**: Retry logic, fallback strategies, forced answer generation
 - ✅ **Async/Await**: Non-blocking I/O for performance
 - ✅ **Type Safe**: Full type hints throughout
+- ✅ **Forced Final Answer (ReactAgent)**: Guarantees non-empty `prediction` on quota exhaustion/timeout
 
 ### Tool Features
 
