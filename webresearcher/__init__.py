@@ -27,7 +27,6 @@ from webresearcher.prompt import TOOL_DESCRIPTIONS
 from webresearcher.web_researcher_agent import (
     WebResearcherAgent,
     ResearchRound,
-    TOOL_MAP,
 )
 
 from webresearcher.web_weaver_agent import (
