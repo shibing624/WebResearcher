@@ -5,6 +5,7 @@
 """
 from typing import Dict, List, Optional
 import asyncio
+import datetime
 import json5
 import random
 import time
@@ -38,6 +39,10 @@ TOOL_CLASS = [
     PythonInterpreter(),
 ]
 TOOL_MAP = {tool.name: tool for tool in TOOL_CLASS}
+
+
+def today_date():
+    return datetime.date.today().strftime("%Y-%m-%d")
 
 
 class ReactAgent:
@@ -105,6 +110,10 @@ class ReactAgent:
                     lambda: client.chat.completions.create(**request_params),
                 )
                 content = chat_response.choices[0].message.content
+                reasoning_content = None
+                if hasattr(chat_response.choices[0].message, 'reasoning_content') and chat_response.choices[0].message.reasoning_content:
+                    reasoning_content = chat_response.choices[0].message.reasoning_content
+                logger.debug(f"Input messages: {msgs}, \nReasoning_content: {reasoning_content}, \nLLM Response: {content}")
                 if content and content.strip():
                     return content.strip()
                 logger.warning(f"Attempt {attempt + 1}: Empty response received.")
@@ -181,7 +190,7 @@ class ReactAgent:
         return ans
 
     async def run(self, question: str) -> Dict[str, str]:
-        system_prompt = get_system_prompt(self.function_list)
+        system_prompt = get_system_prompt(today_date(), self.function_list)
         messages: List[Dict] = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
@@ -203,15 +212,25 @@ class ReactAgent:
             remaining -= 1
             content = await self.call_server(messages)
             content = self._strip_after_tool_response(content)
-            messages.append({"role": "assistant", "content": content})
 
-            # tool call path
+            # tool call path: normalize assistant message to only include the <tool_call> block to avoid verbose assistant chatter
             if "<tool_call>" in content and "</tool_call>" in content:
                 tool_block = content.split("<tool_call>", 1)[1].split("</tool_call>", 1)[0]
+                # Execute tool
                 tool_result = await self._call_tool(tool_block)
                 logger.debug(f"Tool result: {tool_result}")
-                messages.append({"role": "user", "content": f"{OBS_START}\n{tool_result}\n{OBS_END}"})
+                # Combine <tool_call> and tool response into a single 'user' message to avoid consecutive assistant entries
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        f"<tool_call>\n{tool_block}\n</tool_call>\n"
+                        f"{OBS_START}\n{tool_result}\n{OBS_END}"
+                    )
+                })
                 continue
+
+            # normal assistant response path (no tool call)
+            messages.append({"role": "assistant", "content": content})
 
             # termination path
             final = self._parse_answer(content)

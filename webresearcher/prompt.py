@@ -6,7 +6,8 @@
 import json
 from typing import List
 
-BASE_SYSTEM_PROMPT = """You are a deep research assistant. Your core function is to conduct thorough, multi-source investigations into any topic. You must handle both broad, open-domain inquiries and queries within specialized academic fields. For every request, synthesize information from credible, diverse sources to deliver a comprehensive, accurate, and objective response. When you have gathered sufficient information and are ready to provide the definitive response, you must enclose the entire final answer within <answer></answer> tags.
+BASE_SYSTEM_PROMPT = """You are a deep research assistant. Today is {today}. 
+Your core function is to conduct thorough, multi-source investigations into any topic. You must handle both broad, open-domain inquiries and queries within specialized academic fields. For every request, synthesize information from credible, diverse sources to deliver a comprehensive, accurate, and objective response. When you have gathered sufficient information and are ready to provide the definitive response, you must enclose the entire final answer within <answer></answer> tags.
 
 # Tools
 
@@ -21,8 +22,7 @@ For each function call, return a json object with function name and arguments wi
 <tool_call>
 {{"name": <function-name>, "arguments": <args-json-object>}}
 </tool_call>
-
-Current date: """
+"""
 
 TOOL_DESCRIPTIONS = {
     "search": {"type": "function", "function": {"name": "search", "description": "Perform Google web searches then returns a string of the top search results. Accepts multiple queries.", "parameters": {"type": "object", "properties": {"query": {"type": "array", "items": {"type": "string", "description": "The search query."}, "minItems": 1, "description": "The list of search queries."}}, "required": ["query"]}}},
@@ -54,12 +54,12 @@ print(f"The result is: {np.mean([1,2,3])}")
 }
 
 
-def get_system_prompt(tools: list) -> str:
+def get_system_prompt(today: str, tools: list) -> str:
     """
     Generates a system prompt including descriptions for the specified tools.
     """
     tools_text = "\n".join(json.dumps(TOOL_DESCRIPTIONS[tool]) for tool in tools if tool in TOOL_DESCRIPTIONS)
-    return BASE_SYSTEM_PROMPT.format(tools_text=tools_text)
+    return BASE_SYSTEM_PROMPT.format(today=today, tools_text=tools_text)
 
 
 def get_iterresearch_system_prompt(today: str, function_list: list, instruction: str = "") -> str:
