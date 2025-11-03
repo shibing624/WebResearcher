@@ -190,14 +190,8 @@ class ReactAgent:
         return ans
 
     async def run(self, question: str) -> Dict[str, str]:
-        system_prompt = get_system_prompt(today_date(), self.function_list)
-        # Inject task-specific instruction into the system prompt so it takes effect strongly
-        if self.instruction:
-            system_prompt = (
-                f"{system_prompt}\n\n# Task-specific Instruction\n"
-                f"{self.instruction}\n\n"
-                f"The above instruction is mandatory. Always follow it throughout the conversation."
-            )
+        # Build system prompt with tool schemas and task-specific instruction handled inside prompt.py
+        system_prompt = get_system_prompt(today_date(), self.function_list, self.instruction)
         messages: List[Dict] = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},

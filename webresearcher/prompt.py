@@ -54,13 +54,55 @@ print(f"The result is: {np.mean([1,2,3])}")
 }
 
 
-def get_system_prompt(today: str, tools: list) -> str:
+def _format_tool_desc(tool_item) -> str:
+    """Return a JSON string of the tool schema.
+    - If `tool_item` is a full schema dict, use it directly.
+    - If it's a string and in TOOL_DESCRIPTIONS, use the built-in schema.
+    - Otherwise, synthesize a minimal valid schema for custom tools.
+    """
+    # If a full schema dict is provided, use it directly
+    if isinstance(tool_item, dict):
+        return json.dumps(tool_item)
+    # Otherwise, treat as tool name string
+    tool_name = str(tool_item)
+    if tool_name in TOOL_DESCRIPTIONS:
+        return json.dumps(TOOL_DESCRIPTIONS[tool_name])
+    # Fallback: synthesize a minimal valid schema for custom tools
+    return json.dumps({
+        "type": "function",
+        "function": {
+            "name": tool_name,
+            "description": f"Custom tool '{tool_name}' callable by the agent. Provide a JSON 'arguments' object.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    })
+
+
+def get_system_prompt(today: str, tools: list, instruction: str = "") -> str:
     """
     Generates a system prompt including descriptions for the specified tools.
-    """
-    tools_text = "\n".join(json.dumps(TOOL_DESCRIPTIONS[tool]) for tool in tools if tool in TOOL_DESCRIPTIONS)
-    return BASE_SYSTEM_PROMPT.format(today=today, tools_text=tools_text)
 
+    Enhancements:
+    - Accepts an optional `instruction` that will be appended as a mandatory, task-specific section.
+    - Automatically generates minimal OpenAI tool schemas for custom tools not present in TOOL_DESCRIPTIONS.
+      Custom tool schema format:
+        {"type": "function", "function": {"name": <tool_name>, "description": "Custom tool callable by the agent. Provide a JSON 'arguments' object.", "parameters": {"type": "object", "properties": {}, "required": []}}}
+    - If an element in `tools` is already a full tool schema dict, it will be used as-is.
+    """
+
+    tools_text = "\n".join(_format_tool_desc(tool) for tool in tools)
+
+    prompt = BASE_SYSTEM_PROMPT.format(today=today, tools_text=tools_text)
+
+    if instruction:
+        instruction_text = (
+            "\n\n# Task-specific Instruction\n"
+            f"{instruction}\n\n"
+            "The above instruction is mandatory. Always follow it throughout the conversation."
+        )
+        prompt = prompt + instruction_text
+
+    return prompt
 
 def get_iterresearch_system_prompt(today: str, function_list: list, instruction: str = "") -> str:
     """
@@ -68,7 +110,7 @@ def get_iterresearch_system_prompt(today: str, function_list: list, instruction:
     
     Requires LLM to generate <plan>, <report>, and <tool_call>/<answer> in a single call. 
     """
-    tools_text = "\n".join(json.dumps(TOOL_DESCRIPTIONS[tool]) for tool in function_list if tool in TOOL_DESCRIPTIONS)
+    tools_text = "\n".join(_format_tool_desc(tool) for tool in function_list)
     instruction_text = ""
     if instruction:
         instruction_text = f"\n\nAdditional persona instructions:\n{instruction}\n"
@@ -266,7 +308,8 @@ def get_webweaver_writer_prompt(today: str, instruction: str = "") -> str:
     instruction_text = ""
     if instruction:
         instruction_text = f"\n\nAdditional persona instructions:\n{instruction}\n"
-    return f"""You are the Writer Agent for WebWeaver. Today is {today}. Your job is to write a high-quality, comprehensive report based *only* on the [Final Outline] and the [Retrieved Evidence].
+    return f"""You are the Writer Agent for WebWeaver. Today is {today}. 
+Your job is to write a high-quality, comprehensive report based *only* on the [Final Outline] and the [Retrieved Evidence].
 {instruction_text}
 
 You operate in a ReAct (Plan-Action-Observation) loop.
