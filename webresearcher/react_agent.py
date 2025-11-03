@@ -191,6 +191,13 @@ class ReactAgent:
 
     async def run(self, question: str) -> Dict[str, str]:
         system_prompt = get_system_prompt(today_date(), self.function_list)
+        # Inject task-specific instruction into the system prompt so it takes effect strongly
+        if self.instruction:
+            system_prompt = (
+                f"{system_prompt}\n\n# Task-specific Instruction\n"
+                f"{self.instruction}\n\n"
+                f"The above instruction is mandatory. Always follow it throughout the conversation."
+            )
         messages: List[Dict] = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": question},
@@ -254,11 +261,16 @@ class ReactAgent:
 
             # last round fallback: ask explicitly for final answer
             if remaining == 0:
-                prompt = (
+                forced_prompt = (
                     "You have reached the limit. Stop tool calls. Provide the final response using "
                     "<answer> only. Do NOT include <tool_call> or <think>."
                 )
-                messages.append({"role": "user", "content": prompt})
+                # Echo task-specific instruction to maximize adherence in the final call
+                if self.instruction:
+                    forced_prompt = (
+                        f"{forced_prompt}\n\nRemember the task-specific instruction and follow it strictly:\n{self.instruction}"
+                    )
+                messages.append({"role": "user", "content": forced_prompt})
                 content = await self.call_server(messages)
                 messages.append({"role": "assistant", "content": content})
                 final = self._parse_answer(content)
@@ -279,11 +291,15 @@ class ReactAgent:
                 }
 
         # Exhausted available LLM calls: perform a final forced answer call before returning
-        prompt = (
+        forced_prompt = (
             "You have reached the limit. Stop tool calls. Provide the final response using "
             "<answer> only. Do NOT include <tool_call> or <think>."
         )
-        messages.append({"role": "user", "content": prompt})
+        if self.instruction:
+            forced_prompt = (
+                f"{forced_prompt}\n\nRemember the task-specific instruction and follow it strictly:\n{self.instruction}"
+            )
+        messages.append({"role": "user", "content": forced_prompt})
         content = await self.call_server(messages)
         messages.append({"role": "assistant", "content": content})
         final = self._parse_answer(content)
