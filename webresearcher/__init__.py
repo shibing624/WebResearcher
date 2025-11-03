@@ -4,8 +4,6 @@ WebResearcher: An Iterative Deep-Research Agent
 
 A powerful research agent implementing the IterResearch paradigm,
 featuring unbounded reasoning capability through iterative synthesis.
-
-@author: XuMing(xuming624@qq.com)
 """
 
 __version__ = "0.2.6"
