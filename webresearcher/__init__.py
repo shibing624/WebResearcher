@@ -40,6 +40,10 @@ from webresearcher.tts_agent import (
     TestTimeScalingAgent,
 )
 
+from webresearcher.react_agent import (
+    ReactAgent,
+)
+
 from webresearcher.tool_memory import (
     MemoryBank,
     RetrieveTool,
@@ -78,6 +82,7 @@ __all__ = [
     "WebWeaverPlanner",
     "WebWeaverWriter",
     "TestTimeScalingAgent",
+    "ReactAgent",
     "TOOL_MAP",
     
     # Base classes

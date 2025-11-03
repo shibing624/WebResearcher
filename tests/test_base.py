@@ -3,6 +3,8 @@
 Tests for base module
 """
 import pytest
+import sys
+sys.path.append("..")
 from webresearcher.base import (
     Message,
     BaseTool,

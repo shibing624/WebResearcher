@@ -3,6 +3,8 @@
 Tests for agent module
 """
 import pytest
+import sys
+sys.path.append("..")
 from webresearcher.web_researcher_agent import WebResearcherAgent, ResearchRound
 
 

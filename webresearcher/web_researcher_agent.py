@@ -1,5 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+@author:XuMing(xuming624@qq.com)
+@description: WebResearcher Agent implementing the IterResearch paradigm.
+"""
 import json5
-import os
 import re
 import datetime
 import asyncio

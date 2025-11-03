@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author:XuMing(xuming624@qq.com)
-@description: Prompt for WebResearcher
+@description: Prompts
 """
 import json
 from typing import List

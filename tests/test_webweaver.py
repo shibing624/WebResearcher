@@ -6,6 +6,8 @@
 import pytest
 import asyncio
 import os
+import sys
+sys.path.append("..")
 from webresearcher.tool_memory import MemoryBank, RetrieveTool
 from webresearcher.tool_planner_search import PlannerSearchTool
 from webresearcher.web_weaver_agent import (
