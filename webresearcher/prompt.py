@@ -62,20 +62,20 @@ def _format_tool_desc(tool_item) -> str:
     """
     # If a full schema dict is provided, use it directly
     if isinstance(tool_item, dict):
-        return json.dumps(tool_item)
+        return json.dumps(tool_item, ensure_ascii=False)
     # Otherwise, treat as tool name string
     tool_name = str(tool_item)
     if tool_name in TOOL_DESCRIPTIONS:
-        return json.dumps(TOOL_DESCRIPTIONS[tool_name])
+        return json.dumps(TOOL_DESCRIPTIONS[tool_name], ensure_ascii=False)
     # Fallback: synthesize a minimal valid schema for custom tools
     return json.dumps({
         "type": "function",
         "function": {
-            "name": tool_name,
-            "description": f"Custom tool '{tool_name}' callable by the agent. Provide a JSON 'arguments' object.",
-            "parameters": {"type": "object", "properties": {}, "required": []}
-        }
-    })
+                "name": tool_name,
+                "description": f"Custom tool '{tool_name}' callable by the agent. Provide a JSON 'arguments' object.",
+                "parameters": {"type": "object", "properties": {}, "required": []}
+            }
+        }, ensure_ascii=False)
 
 
 def get_system_prompt(today: str, tools: list, instruction: str = "") -> str:

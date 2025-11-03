@@ -224,7 +224,7 @@ async def main():
     print("="*80)
 
     # Example 1: Multiple tools
-    # await example_react_with_tools()
+    await example_react_with_tools()
     
     # Example 2: Open-ended questions
     # await example_react_open_ended()
@@ -233,7 +233,7 @@ async def main():
     # await example_react_with_custom_config()
 
     # Example 4: Custom Tool (runtime registration)
-    await example_react_custom_tool()
+    # await example_react_custom_tool()
 
 if __name__ == "__main__":
     asyncio.run(main())

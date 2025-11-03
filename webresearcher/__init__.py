@@ -22,6 +22,8 @@ from webresearcher.base import (
     extract_code,
 )
 
+from webresearcher.prompt import TOOL_DESCRIPTIONS
+
 from webresearcher.web_researcher_agent import (
     WebResearcherAgent,
     ResearchRound,
