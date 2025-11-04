@@ -85,9 +85,9 @@ class Visit(BaseTool):
                         cur_response = f"Error fetching {u}: {str(e)}"
                 response.append(cur_response)
             response = "\n=======\n".join(response)
-        
-        logger.debug(f'Summary Length {len(response)}; Summary Content {response}')
-        return response.strip()
+        response = response.strip()
+        logger.debug(f'[Visit] url: {url},\nSummary Length: {len(response)};\nresponse: {response[:500]}...')
+        return response
         
     def call_server(self, msgs, max_retries=2):
         api_key = os.getenv("OPENAI_API_KEY")

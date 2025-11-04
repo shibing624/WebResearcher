@@ -121,7 +121,7 @@ class Search(BaseTool):
             for q in query:
                 responses.append(self.search_with_serp(q))
             response = "\n=======\n".join(responses)
-        logger.debug(f"[Search] query: {query},\nresponse: {response}")
+        logger.debug(f"[Search] query: {query},\nresponse: {response[:500]}...")
         return response
 
 

@@ -146,9 +146,9 @@ class Scholar(BaseTool):
         else:
             assert isinstance(query, List)
             with ThreadPoolExecutor(max_workers=3) as executor:
-
                 response = list(executor.map(self.google_scholar_with_serp, query))
             response = "\n=======\n".join(response)
+        logger.debug(f"[Scholar] query: {query},\nresponse: {response[:500]}...")
         return response
 
 

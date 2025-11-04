@@ -129,7 +129,7 @@ class PythonInterpreter(BaseToolWithFileAccess):
                     if code_result.run_result.execution_time >= timeout - 1:
                         result.append(f"[PythonInterpreter Error] TimeoutError: Execution timed out.")
                     result = '\n'.join(result)
-                    logger.debug('SUCCESS RUNNING TOOL')
+                    logger.debug(f'Result: {result[:500]}...')
                     return result if result.strip() else 'Finished execution.'
 
                 except Timeout as e:

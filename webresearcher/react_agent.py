@@ -219,7 +219,7 @@ class ReactAgent:
                 tool_block = content.split("<tool_call>", 1)[1].split("</tool_call>", 1)[0]
                 # Execute tool
                 tool_result = await self._call_tool(tool_block)
-                logger.debug(f"Tool result: {tool_result}")
+                # logger.debug(f"Tool result: {tool_result}")
                 # Combine <tool_call> and tool response into a single 'user' message to avoid consecutive assistant entries
                 messages.append({
                     "role": "user",
