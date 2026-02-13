@@ -31,6 +31,9 @@ const settingsBtn = $("settingsBtn");
 const closeSettings = $("closeSettings");
 const cancelSettings = $("cancelSettings");
 const saveSettings = $("saveSettings");
+const agentInput = $("agentInput");
+const ttsNumAgentsInput = $("ttsNumAgentsInput");
+const maxTurnsInput = $("maxTurnsInput");
 const instructionInput = $("instructionInput");
 const toolsInput = $("toolsInput");
 
@@ -49,6 +52,9 @@ const state = {
   isResearching: false,
   isMobile: false, // 是否为移动端
   settings: {
+    agent: "web_researcher",
+    ttsNumAgents: 3,
+    maxTurns: 5,
     instruction: "",
     tools: [],
   },
@@ -59,6 +65,8 @@ const state = {
     rounds: [],     // 简化为数组
     toolCalls: [],  // 简化为数组
   },
+  // Web Weaver 当前阶段（planner/writer），用于将 step 映射为 round
+  webWeaverPhase: "planner",
 };
 
 // ============ 工具函数 ============
@@ -240,11 +248,22 @@ const closeMobilePanels = () => {
   }
 };
 
+const updateTtsNumAgentsVisibility = () => {
+  const row = document.getElementById("ttsNumAgentsRow");
+  if (row) row.style.display = agentInput?.value === "tts" ? "block" : "none";
+};
+
 const showSettings = () => {
+  agentInput.value = state.settings.agent || "web_researcher";
+  ttsNumAgentsInput.value = state.settings.ttsNumAgents ?? 3;
+  maxTurnsInput.value = state.settings.maxTurns ?? 5;
   instructionInput.value = state.settings.instruction;
   toolsInput.value = state.settings.tools.join(", ");
+  updateTtsNumAgentsVisibility();
   settingsModal.classList.remove("hidden");
 };
+
+agentInput.addEventListener("change", updateTtsNumAgentsVisibility);
 
 const hideSettings = () => {
   settingsModal.classList.add("hidden");
@@ -554,6 +573,12 @@ const createProcessCard = (title, content, color, round, timestamp) => {
   `;
 };
 
+// 将 Web Weaver 的 step 映射为 round（planner: 1-N, writer: 101-N）
+const stepToRound = (step, phase) => {
+  const p = phase || state.webWeaverPhase;
+  return (p === "writer" ? 100 : 0) + (step || 1);
+};
+
 // ============ 数据处理 ============
 const processEvent = (event) => {
   if (!event || !event.type) return;
@@ -585,17 +610,150 @@ const processEvent = (event) => {
       break;
     }
 
+    case "step": {
+      // Web Weaver: step 对应一轮，映射为 round；若有 plan 则写入
+      const roundNum = stepToRound(event.step, event.phase);
+      let round = state.currentProcess.rounds.find(r => r.round === roundNum);
+      if (!round) {
+        round = {
+          round: roundNum,
+          plan: "",
+          report: "",
+          timestamp: event.timestamp || new Date().toISOString(),
+        };
+        state.currentProcess.rounds.push(round);
+      }
+      if (event.plan) round.plan = event.plan;
+      if (event.timestamp) round.timestamp = event.timestamp;
+      // tool_call 类型的 step 由 tool 事件单独处理
+      renderProcess();
+      break;
+    }
+
+    case "outline_updated": {
+      const roundNum = stepToRound(event.step, event.phase);
+      let round = state.currentProcess.rounds.find(r => r.round === roundNum);
+      if (!round) {
+        round = {
+          round: roundNum,
+          plan: "",
+          report: "",
+          timestamp: event.timestamp || new Date().toISOString(),
+        };
+        state.currentProcess.rounds.push(round);
+      }
+      if (event.outline) round.report = event.outline;
+      if (event.timestamp) round.timestamp = event.timestamp;
+      renderProcess();
+      break;
+    }
+
+    case "section_written": {
+      const roundNum = stepToRound(event.step, event.phase);
+      let round = state.currentProcess.rounds.find(r => r.round === roundNum);
+      if (!round) {
+        round = {
+          round: roundNum,
+          plan: "",
+          report: "",
+          timestamp: event.timestamp || new Date().toISOString(),
+        };
+        state.currentProcess.rounds.push(round);
+      }
+      if (event.content) {
+        round.report = (round.report ? round.report + "\n\n" : "") + event.content;
+      }
+      if (event.timestamp) round.timestamp = event.timestamp;
+      renderProcess();
+      break;
+    }
+
+    case "thinking": {
+      // React Agent: 思考/推理内容，创建 round 并作为 plan 展示
+      const roundNum = event.round || 1;
+      let round = state.currentProcess.rounds.find(r => r.round === roundNum);
+      if (!round) {
+        round = {
+          round: roundNum,
+          plan: "",
+          report: "",
+          timestamp: event.timestamp || new Date().toISOString(),
+        };
+        state.currentProcess.rounds.push(round);
+      }
+      if (event.content) round.plan = (round.plan ? round.plan + "\n\n" : "") + event.content;
+      if (event.timestamp) round.timestamp = event.timestamp;
+      renderProcess();
+      break;
+    }
+
     case "tool":
     case "tool_error": {
+      // Web Weaver 用 event.step，Web Researcher/React 用 event.round
+      const roundNum = event.round !== undefined ? event.round : stepToRound(event.step, event.phase);
+      // React 不发送 round 事件，需确保 round 存在才能被 renderProcess 展示
+      let r = state.currentProcess.rounds.find(x => x.round === roundNum);
+      if (!r) {
+        r = {
+          round: roundNum,
+          plan: "",
+          report: "",
+          timestamp: event.timestamp || new Date().toISOString(),
+        };
+        state.currentProcess.rounds.push(r);
+      }
       state.currentProcess.toolCalls.push({
-        round: event.round || 1,
-        tool: event.tool_call || event.action || "tool",
+        round: roundNum,
+        tool: event.tool_call || event.action || event.tool_name || "tool",
         observation: event.observation || "",
         timestamp: event.timestamp || new Date().toISOString(),
         isError: event.type === "tool_error",
       });
       
       renderProcess();
+      break;
+    }
+
+    case "tts_result": {
+      // TTS Agent: 并行研究结果，转为 rounds 展示
+      const runs = event.parallel_runs || [];
+      runs.forEach((run, i) => {
+        const pred = run.prediction || "";
+        const report = run.report || "";
+        const content = pred + (report ? "\n\n" + report : "");
+        state.currentProcess.rounds.push({
+          round: i + 1,
+          plan: "",
+          report: content.trim() || `(Agent ${i + 1} 未返回)`,
+          timestamp: event.timestamp || new Date().toISOString(),
+        });
+      });
+      renderProcess();
+      break;
+    }
+
+    case "complete": {
+      // Web Weaver 完成事件
+      const result = event.result || {};
+      const answer = result.final_report || "";
+      const lastAssistant = Array.from(messagesList.querySelectorAll('[data-role="assistant"]')).pop();
+      if (lastAssistant && answer) {
+        updateAssistantMessage(lastAssistant, answer, turnIndex);
+      }
+      if (answer) {
+        state.conversationHistory.push({
+          question: state.currentQuestion,
+          answer: answer,
+          timestamp: new Date().toISOString(),
+        });
+        if (state.currentSessionId) addToHistory();
+      }
+      if (state.eventSource) {
+        state.eventSource.close();
+        state.eventSource = null;
+      }
+      state.isResearching = false;
+      updateButtonState(false);
       break;
     }
 
@@ -657,7 +815,13 @@ const processEvent = (event) => {
     }
 
     case "status": {
-      if (event.status !== "running" && state.eventSource) {
+      // 记录 Web Weaver 阶段，用于 step 到 round 的映射
+      if (event.phase) {
+        state.webWeaverPhase = event.phase;
+      }
+      // 仅在明确表示终止时关闭流；"starting" 不应触发关闭（Web Weaver 每个阶段开始会发 starting）
+      const terminalStatuses = ["completed", "failed", "timeout", "terminated", "answer found"];
+      if (terminalStatuses.includes(event.status) && state.eventSource) {
         state.eventSource.close();
         state.eventSource = null;
         state.isResearching = false;
@@ -704,6 +868,7 @@ const startResearch = async (evt) => {
   // 清空研究过程（新一轮研究）
   state.currentProcess.rounds = [];
   state.currentProcess.toolCalls = [];
+  state.webWeaverPhase = "planner";
   
   // 清空右侧面板显示
   processContent.innerHTML = "";
@@ -724,7 +889,11 @@ const startResearch = async (evt) => {
   try {
     // 如果没有会话ID，先创建会话
     if (!state.currentSessionId) {
-      const sessionPayload = {};
+      const sessionPayload = {
+        agent: state.settings.agent || "web_researcher",
+        tts_num_agents: state.settings.ttsNumAgents ?? 3,
+        max_turns: state.settings.maxTurns ?? 5,
+      };
       if (state.settings.instruction) {
         sessionPayload.instruction = state.settings.instruction;
       }
@@ -799,15 +968,24 @@ const updateButtonState = (isResearching) => {
 };
 
 // 中止研究
-const stopResearch = () => {
+const stopResearch = async () => {
+  // 先请求后端取消任务
+  if (state.currentSessionId) {
+    try {
+      await fetch(`/api/session/${state.currentSessionId}/cancel`, { method: "POST" });
+    } catch (err) {
+      console.warn("取消请求失败", err);
+    }
+  }
+
   if (state.eventSource) {
     state.eventSource.close();
     state.eventSource = null;
   }
-  
+
   state.isResearching = false;
   updateButtonState(false);
-  
+
   // 更新最后一条助手消息
   const lastAssistant = Array.from(messagesList.querySelectorAll('[data-role="assistant"]')).pop();
   if (lastAssistant && lastAssistant.querySelector(".animate-spin")) {
@@ -1164,6 +1342,11 @@ closeSettings.addEventListener("click", hideSettings);
 cancelSettings.addEventListener("click", hideSettings);
 
 saveSettings.addEventListener("click", () => {
+  state.settings.agent = agentInput.value || "web_researcher";
+  const n = parseInt(ttsNumAgentsInput.value, 10);
+  state.settings.ttsNumAgents = (n >= 2 && n <= 8) ? n : 3;
+  const mt = parseInt(maxTurnsInput.value, 10);
+  state.settings.maxTurns = (mt >= 1 && mt <= 20) ? mt : 5;
   state.settings.instruction = instructionInput.value.trim();
   state.settings.tools = parseTools(toolsInput.value);
   hideSettings();

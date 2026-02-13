@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 
 class CreateSessionRequest(BaseModel):
     """创建新会话"""
+    agent: Optional[str] = Field(default="web_researcher", description="Agent 类型: web_researcher | webweaver | react | tts")
+    tts_num_agents: Optional[int] = Field(default=3, ge=2, le=8, description="TTS Agent 并行智能体个数，2-8")
+    max_turns: Optional[int] = Field(default=5, ge=1, le=20, description="多轮对话历史轮数，1-20")
     instruction: Optional[str] = Field(default="", max_length=2000, description="可选的附加指令")
     tools: Optional[List[str]] = Field(default=None, description="限定可用工具名称列表")
 

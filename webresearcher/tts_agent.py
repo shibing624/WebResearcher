@@ -219,14 +219,16 @@ class TestTimeScalingAgent:
 
         # Call LLM for synthesis
         logger.debug("Calling synthesis LLM...")
-        final_answer_raw = await synthesis_agent.call_server(
+        response = await synthesis_agent.call_server(
             synthesis_messages,
             stop_sequences=[]  # No tool stop tokens needed
         )
+        # call_server 返回 Dict，包含 content、reasoning_content 等
+        final_answer_text = response.get("content", "") if isinstance(response, dict) else str(response)
 
         logger.debug("Synthesis Complete")
         return {
-            "final_answer": final_answer_raw.strip(),
+            "final_answer": final_answer_text.strip(),
             "synthesis_reports": reports_for_log
         }
 

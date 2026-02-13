@@ -25,7 +25,13 @@ def _format_sse(payload: Dict[str, Any]) -> str:
 @api_router.post("/session")
 async def create_session(request: CreateSessionRequest):
     """创建新会话"""
-    session = manager.create_session(instruction=request.instruction, tools=request.tools)
+    session = manager.create_session(
+        instruction=request.instruction,
+        tools=request.tools,
+        agent=request.agent or "web_researcher",
+        tts_num_agents=request.tts_num_agents or 3,
+        max_turns=request.max_turns or 5,
+    )
     return session.summary()
 
 
@@ -38,6 +44,16 @@ async def submit_question(request: ResearchRequest):
     
     manager.start_research(session, request.question)
     return {"session_id": session.id, "status": "running"}
+
+
+@api_router.post("/session/{session_id}/cancel")
+async def cancel_research(session_id: str):
+    """取消当前会话正在运行的研究任务"""
+    session = manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    cancelled = await manager.cancel_research(session)
+    return {"session_id": session_id, "cancelled": cancelled}
 
 
 @api_router.get("/session/{session_id}")
